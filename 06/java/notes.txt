@@ -1,0 +1,26 @@
+To run the Java assembler use the following commands. Run the commands from "nand2tetris/projects/06/java/src".
+
+Compile code:
+javac com/java/assembler/*.java 
+
+Run assembler:
+java com.java.assembler/Assembler
+
+This is necessary as I'm not using a build tool like, for example, maven or gradle.
+
+
+To do:
+- implement symbol table logic
+
+
+python example:
+https://github.com/kronosapiens/nand2tetris/blob/master/projects/06/assembler.py
+
+java example:
+https://github.com/davidsmithmke/nand2tetris-project6/blob/master/assembler/src/com/davidsmithmke/nand2tetris/assembler/Assembler.java
+
+video lesson:
+https://www.coursera.org/learn/build-a-computer/lecture/jPNFL/unit-6-5-developing-a-hack-assembler
+
+lecture notes:
+https://drive.google.com/file/d/1uKGRMnL-gqk9DsgeN50z0EpHoSMWe6F5/view
