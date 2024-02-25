@@ -1,0 +1,3 @@
+command to zip files in cwd
+
+zip -r <zip_name>.zip . -x "*.cmp" -x "*.tst" -x "*.out"
