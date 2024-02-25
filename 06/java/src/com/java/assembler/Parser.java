@@ -97,6 +97,10 @@ class Parser {
         jump = null;
     }
 
+    public void resetLineCount() {
+        lineCount = -1;
+    }
+
     public void parseACommand() {
         symbol = currentCommand.replace("@", "");
     }

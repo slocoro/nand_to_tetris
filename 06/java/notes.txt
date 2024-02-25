@@ -4,7 +4,7 @@ Compile code:
 javac com/java/assembler/*.java 
 
 Run assembler:
-java com.java.assembler/Assembler
+java com.java.assembler/Assembler "../../rect/Rect.asm"
 
 This is necessary as I'm not using a build tool like, for example, maven or gradle.
 
@@ -24,3 +24,28 @@ https://www.coursera.org/learn/build-a-computer/lecture/jPNFL/unit-6-5-developin
 
 lecture notes:
 https://drive.google.com/file/d/1uKGRMnL-gqk9DsgeN50z0EpHoSMWe6F5/view
+
+
+Symbols:
+
+predefined Symbols
+Symbols like R0, LCL, ARG, SCREEN, KBD, ... simply get replaced with their predefined values (which are memory locations specificed in decimal).
+
+label commands
+Look like (xxx)
+They are pseudo commands because they don't generate any code
+The symbol (xxx) refers to memory location of next instruction in program
+
+Need to keep track of command count. ignore whitespace AND pseudo commands!
+
+Variable Symbols
+Each variable symbol gets assigned a memory location starting from 16
+
+Steps:
+- initialise symbol table with predefined values
+first pass
+- go through program and look for label declarations (start with "(") while keeping count of numberof instructions
+- every time you see a label add it to the symbol table
+second pass
+- look for variable symbols @... and add them to symbol table if they not exist
+- make sure to add from 16 onwards and increment count every time you add a variable to symbol table
