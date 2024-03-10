@@ -1,6 +1,6 @@
 # TODO:
 # figure out how to do a pop operation
-# figure out how to implement eq, gt, lt arithmetic
+# figure out how to implement eq, gt, lt arithmetic (done)
 
 from typing import Optional
 from dataclasses import dataclass
@@ -141,28 +141,11 @@ class CodeWriter:
         index_ = f"{file_name}.{index}" if segment == "static" else index
 
         if segment in ["local", "this", "that", "argument", "pointer", "static"]:
-            # hack_command = textwrap.dedent(f"""
-            # // {command}
-            # @{index_}
-            # D=A
-            # @{self.segment_mapping[segment] if segment != "temp" else self.temp_base_address}
-            # D=D+M
-            # @SP
-            # A=M
-            # M=D
-            # @SP
-            # M=M-1
-            # A=M
-            # D=M
-            # A=A+1
-            # A=M
-            # M=D
-            # """)
             hack_command = textwrap.dedent(f"""
             // {command}
             @{index_}
             D=A
-            @{self.segment_mapping[segment] if segment != "temp" else self.temp_base_address}
+            @{self.segment_mapping[segment]}
             D=D+M
             @SP
             A=M
@@ -176,7 +159,7 @@ class CodeWriter:
             M=D
             """)
         
-        if segment in ["local", "this", "that", "argument", "pointer", "temp", "static"]:
+        if segment in ["temp"]:
             hack_command = textwrap.dedent(f"""
             // {command}
             @{index_}
@@ -418,14 +401,14 @@ def main():
     # output_path = "../StackArithmetic/SimpleAdd/SimpleAdd.asm"
     # input_path = "../StackArithmetic/StackTest/StackTest.vm"
     # output_path = "../StackArithmetic/StackTest/StackTest.asm"
-    input_path = "../MemoryAccess/BasicTest/BasicTest.vm"
-    output_path = "../MemoryAccess/BasicTest/BasicTest.asm"
+    # input_path = "../MemoryAccess/BasicTest/BasicTest.vm"
+    # output_path = "../MemoryAccess/BasicTest/BasicTest.asm"
     # input_path = "../MemoryAccess/PointerTest/PointerTest.vm"
     # output_path = "../MemoryAccess/PointerTest/PointerTest.asm"
     # input_path = "../MemoryAccess/StaticTest/StaticTest.vm"
     # output_path = "../MemoryAccess/StaticTest/StaticTest.asm"
-    # input_path = "../MemoryAccess/StaticTest/Simple.vm"
-    # output_path = "../MemoryAccess/StaticTest/Simple.asm"
+    input_path = "../MemoryAccess/StaticTest/Simple.vm"
+    output_path = "../MemoryAccess/StaticTest/Simple.asm"
 
     parser = Parser(input_path)
     breakpoint()
