@@ -6,9 +6,7 @@ from typing import Optional
 from dataclasses import dataclass
 from io import StringIO 
 import textwrap
-import sys
 import uuid
-from pathlib import Path
 
 
 @dataclass
@@ -66,7 +64,6 @@ class Parser:
         else:
             print("current_command is not set.")
             self.current_command = None
-        # return self.command_type
     
     def _get_arg_1(self):
         if self.command_type == Commands.C_ARITHMETIC:
@@ -135,8 +132,6 @@ class CodeWriter:
         self._output_buffer.write(hack_command)
     
     def _translate_pop(self, command, segment, index, file_name):
-        # this probably doesn't work
-        # need to review the videos for this
         hack_command = None
         index_ = f"{file_name}.{index}" if segment == "static" else index
 
@@ -403,12 +398,12 @@ def main():
     # output_path = "../StackArithmetic/SimpleAdd/SimpleAdd.asm"
     # input_path = "../StackArithmetic/StackTest/StackTest.vm"
     # output_path = "../StackArithmetic/StackTest/StackTest.asm"
-    input_path = "../MemoryAccess/BasicTest/BasicTest.vm"
-    output_path = "../MemoryAccess/BasicTest/BasicTest.asm"
+    # input_path = "../MemoryAccess/BasicTest/BasicTest.vm"
+    # output_path = "../MemoryAccess/BasicTest/BasicTest.asm"
     # input_path = "../MemoryAccess/PointerTest/PointerTest.vm"
     # output_path = "../MemoryAccess/PointerTest/PointerTest.asm"
-    # input_path = "../MemoryAccess/StaticTest/StaticTest.vm"
-    # output_path = "../MemoryAccess/StaticTest/StaticTest.asm"
+    input_path = "../MemoryAccess/StaticTest/StaticTest.vm"
+    output_path = "../MemoryAccess/StaticTest/StaticTest.asm"
     # input_path = "../MemoryAccess/StaticTest/Simple.vm"
     # output_path = "../MemoryAccess/StaticTest/Simple.asm"
 
