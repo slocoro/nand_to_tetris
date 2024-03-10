@@ -359,6 +359,7 @@ class CodeWriter:
             A=D
             D=M
             @SP
+            A=M
             M=D
             @SP
             M=M+1
@@ -369,10 +370,11 @@ class CodeWriter:
             @{index_}
             D=A
             @{self.temp_base_address}
-            D=M+D
+            D=D+A
             A=D
             D=M
             @SP
+            A=M
             M=D
             @SP
             M=M+1
@@ -401,14 +403,14 @@ def main():
     # output_path = "../StackArithmetic/SimpleAdd/SimpleAdd.asm"
     # input_path = "../StackArithmetic/StackTest/StackTest.vm"
     # output_path = "../StackArithmetic/StackTest/StackTest.asm"
-    # input_path = "../MemoryAccess/BasicTest/BasicTest.vm"
-    # output_path = "../MemoryAccess/BasicTest/BasicTest.asm"
+    input_path = "../MemoryAccess/BasicTest/BasicTest.vm"
+    output_path = "../MemoryAccess/BasicTest/BasicTest.asm"
     # input_path = "../MemoryAccess/PointerTest/PointerTest.vm"
     # output_path = "../MemoryAccess/PointerTest/PointerTest.asm"
     # input_path = "../MemoryAccess/StaticTest/StaticTest.vm"
     # output_path = "../MemoryAccess/StaticTest/StaticTest.asm"
-    input_path = "../MemoryAccess/StaticTest/Simple.vm"
-    output_path = "../MemoryAccess/StaticTest/Simple.asm"
+    # input_path = "../MemoryAccess/StaticTest/Simple.vm"
+    # output_path = "../MemoryAccess/StaticTest/Simple.asm"
 
     parser = Parser(input_path)
     breakpoint()
