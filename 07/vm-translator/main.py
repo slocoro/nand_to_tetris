@@ -8,6 +8,8 @@ from io import StringIO
 import textwrap
 import sys
 import uuid
+from pathlib import Path
+
 
 @dataclass
 class Commands:
@@ -27,6 +29,7 @@ class Parser:
         self.file_path = file_path
         self.current_command: Optional[str] = None
         self.file = self._read_file_line_by_line()
+        self.file_name = self._get_file_name()
 
     def has_more_commands(self):
         try:
@@ -48,6 +51,9 @@ class Parser:
         self._get_command_type()
         self._get_arg_1()
         self._get_arg_2()
+
+    def _get_file_name(self):
+        return self.file_path.split("/")[-1].split(".")[0]
 
     def _get_command_type(self):
         if self.current_command is not None:
@@ -91,7 +97,10 @@ class CodeWriter:
         "local": "LCL",
         "argument": "ARG",
         "this": "THIS",
-        "that": "THAT"
+        "that": "THAT",
+        "temp": "TEMP",
+        "pointer": "POINTER",
+        "static": "STATIC"
     }
     pointer_mapping = {
         0: "THIS",
@@ -107,13 +116,13 @@ class CodeWriter:
 
         self._write_to_buffer(hack_command)
     
-    def write_push_pop(self, command: str, command_type: str, segment: str, index: int):
+    def write_push_pop(self, command: str, command_type: str, segment: str, index: int, file_name: str):
 
         hack_command = None
         if command_type == Commands.C_PUSH:
-            hack_command = self._translate_push(command, segment, index)
+            hack_command = self._translate_push(command, segment, index, file_name)
         if command_type == Commands.C_POP:
-            hack_command = self._translate_pop(command, segment, index)
+            hack_command = self._translate_pop(command, segment, index, file_name)
 
         self._write_to_buffer(hack_command)
 
@@ -125,25 +134,67 @@ class CodeWriter:
         print(hack_command)
         self._output_buffer.write(hack_command)
     
-    def _translate_pop(self, command, segment, index):
+    def _translate_pop(self, command, segment, index, file_name):
         # this probably doesn't work
         # need to review the videos for this
         hack_command = None
-        if segment in ["local", "this", "that", "argument", "pointer", "temp"]:
+        index_ = f"{file_name}.{index}" if segment == "static" else index
+
+        if segment in ["local", "this", "that", "argument", "pointer", "static"]:
+            # hack_command = textwrap.dedent(f"""
+            # // {command}
+            # @{index_}
+            # D=A
+            # @{self.segment_mapping[segment] if segment != "temp" else self.temp_base_address}
+            # D=D+M
+            # @SP
+            # A=M
+            # M=D
+            # @SP
+            # M=M-1
+            # A=M
+            # D=M
+            # A=A+1
+            # A=M
+            # M=D
+            # """)
             hack_command = textwrap.dedent(f"""
             // {command}
-            @SP
-            M=M-1
-            @{index}
+            @{index_}
             D=A
-            @{self.segment_mapping[segment]}
-            D=M+D
-            A=D
-            D=M
+            @{self.segment_mapping[segment] if segment != "temp" else self.temp_base_address}
+            D=D+M
             @SP
             A=M
             M=D
+            @SP
+            M=M-1
+            A=M
+            D=M
+            A=A+1
+            A=M
+            M=D
             """)
+        
+        if segment in ["local", "this", "that", "argument", "pointer", "temp", "static"]:
+            hack_command = textwrap.dedent(f"""
+            // {command}
+            @{index_}
+            D=A
+            @{self.temp_base_address}
+            D=D+A
+            @SP
+            A=M
+            M=D
+            @SP
+            M=M-1
+            A=M
+            D=M
+            A=A+1
+            A=M
+            M=D
+            """)
+        
         return hack_command
 
     def _translate_arithmetic(self, command: str):
@@ -297,15 +348,17 @@ class CodeWriter:
         return hack_command
 
 
-    def _translate_push(self, command: str, segment:str, index: int):
+    def _translate_push(self, command: str, segment:str, index: int, file_name: str):
         # not sure if the translated code should include the registry aliases
         # e.g. SP, LCL, ... or the actual values
+        index_ = f"{file_name}.{index}" if segment == "static" else index
         hack_command = None
+
         breakpoint()
         if segment == "constant":
             hack_command = textwrap.dedent(f"""
             // {command}
-            @{index}
+            @{index_}
             D=A
             @SP
             A=M
@@ -313,10 +366,10 @@ class CodeWriter:
             @SP
             M=M+1
             """)
-        elif segment in ["local", "this", "that", "argument"]:
+        elif segment in ["local", "this", "that", "argument", "static"]:
             hack_command = textwrap.dedent(f"""
             //// {command}
-            @{index}
+            @{index_}
             D=A
             @{self.segment_mapping[segment]}
             D=M+D
@@ -330,7 +383,7 @@ class CodeWriter:
         elif segment == "temp":
             hack_command = textwrap.dedent(f"""
             //// {command}
-            @{index}
+            @{index_}
             D=A
             @{self.temp_base_address}
             D=M+D
@@ -363,16 +416,25 @@ def main():
 
     # input_path = "../StackArithmetic/SimpleAdd/SimpleAdd.vm"
     # output_path = "../StackArithmetic/SimpleAdd/SimpleAdd.asm"
-    input_path = "../StackArithmetic/StackTest/StackTest.vm"
-    output_path = "../StackArithmetic/StackTest/StackTest.asm"
+    # input_path = "../StackArithmetic/StackTest/StackTest.vm"
+    # output_path = "../StackArithmetic/StackTest/StackTest.asm"
+    input_path = "../MemoryAccess/BasicTest/BasicTest.vm"
+    output_path = "../MemoryAccess/BasicTest/BasicTest.asm"
+    # input_path = "../MemoryAccess/PointerTest/PointerTest.vm"
+    # output_path = "../MemoryAccess/PointerTest/PointerTest.asm"
+    # input_path = "../MemoryAccess/StaticTest/StaticTest.vm"
+    # output_path = "../MemoryAccess/StaticTest/StaticTest.asm"
+    # input_path = "../MemoryAccess/StaticTest/Simple.vm"
+    # output_path = "../MemoryAccess/StaticTest/Simple.asm"
 
     parser = Parser(input_path)
+    breakpoint()
     code_writer = CodeWriter(output_path)
     
     while parser.has_more_commands():
         parser.advance()
         if parser.command_type in [Commands.C_PUSH, Commands.C_POP]:
-            code_writer.write_push_pop(parser.current_command, parser.command_type, parser.arg_1, parser.arg_2)
+            code_writer.write_push_pop(parser.current_command, parser.command_type, parser.arg_1, parser.arg_2, parser.file_name)
         if parser.command_type == Commands.C_ARITHMETIC:
             code_writer.write_arithmetic(parser.current_command)
 

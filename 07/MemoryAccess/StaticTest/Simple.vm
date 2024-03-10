@@ -1,0 +1,13 @@
+// This file is part of www.nand2tetris.org
+// and the book "The Elements of Computing Systems"
+// by Nisan and Schocken, MIT Press.
+// File name: projects/07/MemoryAccess/StaticTest/StaticTest.vm
+
+// Executes pop and push commands using the static segment.
+push constant 111
+pop local 8
+push constant 23
+push constant 54
+pop this 3
+push constant 87
+add
