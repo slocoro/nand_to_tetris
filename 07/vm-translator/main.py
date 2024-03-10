@@ -135,7 +135,7 @@ class CodeWriter:
         hack_command = None
         index_ = f"{file_name}.{index}" if segment == "static" else index
 
-        if segment in ["local", "this", "that", "argument", "pointer", "static"]:
+        if segment in ["local", "this", "that", "argument", "static"]:
             hack_command = textwrap.dedent(f"""
             // {command}
             @{index_}
@@ -173,10 +173,25 @@ class CodeWriter:
             M=D
             """)
         
+        if segment in ["pointer"]:
+            # decrement stack pointer
+            # select memory that is pointed to by SP
+            # put that value in this or that
+            hack_command = textwrap.dedent(f"""
+            // {command}
+            @SP
+            M=M-1
+            A=M
+            D=M
+            @{self.pointer_mapping[index_]}
+            M=D
+            """)
+            
+            
+        
         return hack_command
 
     def _translate_arithmetic(self, command: str):
-        breakpoint()
         hack_command = None
         label_suffix = str(uuid.uuid4())
 
@@ -327,12 +342,9 @@ class CodeWriter:
 
 
     def _translate_push(self, command: str, segment:str, index: int, file_name: str):
-        # not sure if the translated code should include the registry aliases
-        # e.g. SP, LCL, ... or the actual values
         index_ = f"{file_name}.{index}" if segment == "static" else index
         hack_command = None
 
-        breakpoint()
         if segment == "constant":
             hack_command = textwrap.dedent(f"""
             // {command}
@@ -400,15 +412,15 @@ def main():
     # output_path = "../StackArithmetic/StackTest/StackTest.asm"
     # input_path = "../MemoryAccess/BasicTest/BasicTest.vm"
     # output_path = "../MemoryAccess/BasicTest/BasicTest.asm"
-    # input_path = "../MemoryAccess/PointerTest/PointerTest.vm"
-    # output_path = "../MemoryAccess/PointerTest/PointerTest.asm"
-    input_path = "../MemoryAccess/StaticTest/StaticTest.vm"
-    output_path = "../MemoryAccess/StaticTest/StaticTest.asm"
+    input_path = "../MemoryAccess/PointerTest/PointerTest.vm"
+    output_path = "../MemoryAccess/PointerTest/PointerTest.asm"
+    # input_path = "../MemoryAccess/StaticTest/StaticTest.vm"
+    # output_path = "../MemoryAccess/StaticTest/StaticTest.asm"
     # input_path = "../MemoryAccess/StaticTest/Simple.vm"
     # output_path = "../MemoryAccess/StaticTest/Simple.asm"
 
     parser = Parser(input_path)
-    breakpoint()
+    
     code_writer = CodeWriter(output_path)
     
     while parser.has_more_commands():
@@ -419,8 +431,6 @@ def main():
             code_writer.write_arithmetic(parser.current_command)
 
     code_writer.close(output_path)
-
-    breakpoint()
 
 
 if __name__ == "__main__":
