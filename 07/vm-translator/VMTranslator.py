@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from io import StringIO 
 import textwrap
 import uuid
+import sys
 
 
 @dataclass
@@ -106,6 +107,7 @@ class CodeWriter:
 
     def __init__(self, output_path: str, output_buffer=StringIO()):
         self._output_buffer = output_buffer
+        self._output_path = output_path
 
     def write_arithmetic(self, command: str):
 
@@ -123,8 +125,8 @@ class CodeWriter:
 
         self._write_to_buffer(hack_command)
 
-    def close(self, output_path):
-        with open(output_path, mode='w') as f:
+    def close(self):
+        with open(self._output_path, mode='w') as f:
             print(self._output_buffer.getvalue(), file=f)
 
     def _write_to_buffer(self, hack_command):
@@ -412,13 +414,16 @@ def main():
     # output_path = "../StackArithmetic/StackTest/StackTest.asm"
     # input_path = "../MemoryAccess/BasicTest/BasicTest.vm"
     # output_path = "../MemoryAccess/BasicTest/BasicTest.asm"
-    input_path = "../MemoryAccess/PointerTest/PointerTest.vm"
-    output_path = "../MemoryAccess/PointerTest/PointerTest.asm"
+    # input_path = "../MemoryAccess/PointerTest/PointerTest.vm"
+    # output_path = "../MemoryAccess/PointerTest/PointerTest.asm"
     # input_path = "../MemoryAccess/StaticTest/StaticTest.vm"
     # output_path = "../MemoryAccess/StaticTest/StaticTest.asm"
     # input_path = "../MemoryAccess/StaticTest/Simple.vm"
     # output_path = "../MemoryAccess/StaticTest/Simple.asm"
 
+    input_path = sys.argv[1]
+    output_path = input_path.replace(".vm", ".asm")
+    
     parser = Parser(input_path)
     
     code_writer = CodeWriter(output_path)
@@ -430,7 +435,7 @@ def main():
         if parser.command_type == Commands.C_ARITHMETIC:
             code_writer.write_arithmetic(parser.current_command)
 
-    code_writer.close(output_path)
+    code_writer.close()
 
 
 if __name__ == "__main__":
