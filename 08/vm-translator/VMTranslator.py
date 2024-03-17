@@ -336,14 +336,6 @@ class CodeWriter:
             M=M+1
             """)
 
-
-from typing import Optional
-
-from typing import Optional
-            
-        return hack_command
-
-
     def _translate_push(self, command: str, segment:str, index: int, file_name: str):
         index_ = f"{file_name}.{index}" if segment == "static" else index
         hack_command = None
