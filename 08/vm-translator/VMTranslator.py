@@ -67,6 +67,8 @@ class Parser:
                 self.command_type = Commands.C_LABEL
             if self.current_command.startswith("return"):
                 self.command_type = Commands.C_RETURN
+            if self.current_command.startswith("function"):
+                self.command_type = Commands.C_FUNCTION
         else:
             print("current_command is not set.")
             self.current_command = None
@@ -138,8 +140,11 @@ class CodeWriter:
     def write_call(self):
         pass
 
-    def write_function(self):
-        pass
+    def write_function(self, command: str, function_name: str, num_local_vars: int):
+        
+        hack_command = self._translate_function(command, function_name, num_local_vars)
+        
+        self._write_to_buffer(hack_command)
     
     def write_arithmetic(self, command: str):
         
@@ -171,9 +176,14 @@ class CodeWriter:
     def _translate_call(self, command):
         pass
 
-    def _translate_function(self, command):
-        pass
-    
+    def _translate_function(self, command: str, function_name: str, num_local_vars: str):
+        local_vars = "push constant 0\n" * num_local_vars
+        return textwrap.dedent(f"""
+            // {command}
+            ({function_name})
+            {local_vars}
+        """)
+           
     def _translate_goto(self, command, label_name):
         return textwrap.dedent(f"""
             // {command}
@@ -490,7 +500,7 @@ def main():
         if parser.command_type == Commands.C_IF_GOTO:
             code_writer.write_if_goto(parser.current_command, parser.arg_1)
         if parser.command_type == Commands.C_FUNCTION:
-            code_writer.write_function()
+            code_writer.write_function(parser.current_command, parser.arg_1, parser.arg_2)
         if parser.command_type == Commands.C_CALL:
             code_writer.write_call()
         if parser.command_type == Commands.C_RETURN:
