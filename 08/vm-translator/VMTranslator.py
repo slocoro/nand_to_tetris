@@ -114,8 +114,23 @@ class CodeWriter:
         self._output_buffer = output_buffer
         self._output_path = output_path
 
-    def write_arithmetic(self, command: str):
+    def write_label(self, command: str, label_name: str):
+        
+        hack_command = self._translate_label(command, label_name)
 
+        self._write_to_buffer(hack_command)
+    
+    def write_goto(self):
+        pass
+    
+    def write_if_goto(self, command: str, label_name: str):
+        
+        hack_command = self._translate_if_goto(command, label_name)
+
+        self._write_to_buffer(hack_command)
+    
+    def write_arithmetic(self, command: str):
+        
         hack_command = self._translate_arithmetic(command)
 
         self._write_to_buffer(hack_command)
@@ -138,6 +153,24 @@ class CodeWriter:
         print(hack_command)
         self._output_buffer.write(hack_command)
     
+    def _translate_if_goto(self,command, label_name):
+        # SP needs to be decremented after the comparison
+        return textwrap.dedent(f"""
+            // {command}
+            @SP
+            M=M-1
+            A=M
+            D=M
+            @{label_name}
+            D;JGT
+        """)
+        
+    def _translate_label(self, command, label_name):
+        return textwrap.dedent(f"""
+            // {command}
+            ({label_name})
+        """)
+        
     def _translate_pop(self, command, segment, index, file_name):
         hack_command = None
         index_ = f"{file_name}.{index}" if segment == "static" else index
@@ -193,8 +226,6 @@ class CodeWriter:
             @{self.pointer_mapping[index_]}
             M=D
             """)
-            
-            
         
         return hack_command
 
@@ -344,6 +375,8 @@ class CodeWriter:
             M=M+1
             """)
 
+        return hack_command
+
     def _translate_push(self, command: str, segment:str, index: int, file_name: str):
         index_ = f"{file_name}.{index}" if segment == "static" else index
         hack_command = None
@@ -409,19 +442,6 @@ class CodeWriter:
 # could be made it's own class to make cleaner
 def main():
 
-    # input_path = "../StackArithmetic/SimpleAdd/SimpleAdd.vm"
-    # output_path = "../StackArithmetic/SimpleAdd/SimpleAdd.asm"
-    # input_path = "../StackArithmetic/StackTest/StackTest.vm"
-    # output_path = "../StackArithmetic/StackTest/StackTest.asm"
-    # input_path = "../MemoryAccess/BasicTest/BasicTest.vm"
-    # output_path = "../MemoryAccess/BasicTest/BasicTest.asm"
-    # input_path = "../MemoryAccess/PointerTest/PointerTest.vm"
-    # output_path = "../MemoryAccess/PointerTest/PointerTest.asm"
-    # input_path = "../MemoryAccess/StaticTest/StaticTest.vm"
-    # output_path = "../MemoryAccess/StaticTest/StaticTest.asm"
-    # input_path = "../MemoryAccess/StaticTest/Simple.vm"
-    # output_path = "../MemoryAccess/StaticTest/Simple.asm"
-
     input_path = sys.argv[1]
     output_path = input_path.replace(".vm", ".asm")
     
@@ -435,6 +455,10 @@ def main():
             code_writer.write_push_pop(parser.current_command, parser.command_type, parser.arg_1, parser.arg_2, parser.file_name)
         if parser.command_type == Commands.C_ARITHMETIC:
             code_writer.write_arithmetic(parser.current_command)
+        if parser.command_type == Commands.C_LABEL:
+            code_writer.write_label(parser.current_command, parser.arg_1)
+        if parser.command_type == Commands.C_IF_GOTO:
+            code_writer.write_if_goto(parser.current_command, parser.arg_1)
 
     code_writer.close()
 
