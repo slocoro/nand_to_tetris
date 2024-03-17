@@ -55,7 +55,7 @@ class Parser:
                 self.command_type = Commands.C_PUSH
             if self.current_command.startswith("pop"):
                 self.command_type = Commands.C_POP
-            if self.current_command in ["add", "sub", "eq", "neg", "lt", "gt", "and", "or", "not"]:
+            if self.current_command.startswith(tuple(["add", "sub", "eq", "neg", "lt", "gt", "and", "or", "not"])):
                 self.command_type = Commands.C_ARITHMETIC
             if self.current_command.startswith("call"):
                 self.command_type = Commands.C_CALL
@@ -120,8 +120,11 @@ class CodeWriter:
 
         self._write_to_buffer(hack_command)
     
-    def write_goto(self):
-        pass
+    def write_goto(self, command:str, label_name: str):
+        
+        hack_command = self._translate_goto(command, label_name)
+
+        self._write_to_buffer(hack_command)
     
     def write_if_goto(self, command: str, label_name: str):
         
@@ -153,7 +156,14 @@ class CodeWriter:
         print(hack_command)
         self._output_buffer.write(hack_command)
     
-    def _translate_if_goto(self,command, label_name):
+    def _translate_goto(self, command, label_name):
+        return textwrap.dedent(f"""
+            // {command}
+            @{label_name}
+            0;JEQ
+        """)
+
+    def _translate_if_goto(self, command, label_name):
         # SP needs to be decremented after the comparison
         return textwrap.dedent(f"""
             // {command}
@@ -233,7 +243,7 @@ class CodeWriter:
         hack_command = None
         label_suffix = str(uuid.uuid4())
 
-        if command == "add":
+        if command.startswith("add"):
             hack_command = textwrap.dedent(f"""
             // {command}
             @SP
@@ -249,7 +259,7 @@ class CodeWriter:
             @SP
             M=M+1
             """)
-        if command == "sub":
+        if command.startswith("sub"):
             hack_command = textwrap.dedent(f"""
             // {command}
             @SP
@@ -265,7 +275,7 @@ class CodeWriter:
             @SP
             M=M+1
             """)
-        if command == "neg":
+        if command.startswith("neg"):
             hack_command = textwrap.dedent(f"""
             // {command}
             @SP
@@ -276,7 +286,7 @@ class CodeWriter:
             @SP
             M=M+1
             """)
-        if command == "not":
+        if command.startswith("not"):
             hack_command = textwrap.dedent(f"""
             // {command}
             @SP
@@ -287,7 +297,7 @@ class CodeWriter:
             @SP
             M=M+1
             """)
-        if command == "eq":
+        if command.startswith("eq"):
             # wrong!! this needs revision
             hack_command = textwrap.dedent(f"""
             // {command}
@@ -306,7 +316,7 @@ class CodeWriter:
             M=M+1 // false value
             (end_{label_suffix})
             """)
-        if command == "lt":
+        if command.startswith("lt"):
             hack_command = textwrap.dedent(f"""
             // {command}
             @SP
@@ -324,7 +334,7 @@ class CodeWriter:
             M=M+1 // false value
             (end_{label_suffix})
             """)
-        if command == "gt":
+        if command.startswith("gt"):
             hack_command = textwrap.dedent(f"""
             // {command}
             @SP
@@ -342,7 +352,7 @@ class CodeWriter:
             M=M+1 // false value
             (end_{label_suffix})
             """)
-        if command == "and":
+        if command.startswith("and"):
             hack_command = textwrap.dedent(f"""
             // {command}
             @SP
@@ -358,7 +368,7 @@ class CodeWriter:
             @SP
             M=M+1
             """)
-        if command == "or":
+        if command.startswith("or"):
             hack_command = textwrap.dedent(f"""
             // {command}
             @SP
@@ -457,6 +467,8 @@ def main():
             code_writer.write_arithmetic(parser.current_command)
         if parser.command_type == Commands.C_LABEL:
             code_writer.write_label(parser.current_command, parser.arg_1)
+        if parser.command_type == Commands.C_GOTO:
+            code_writer.write_goto(parser.current_command, parser.arg_1)
         if parser.command_type == Commands.C_IF_GOTO:
             code_writer.write_if_goto(parser.current_command, parser.arg_1)
 
