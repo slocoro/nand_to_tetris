@@ -12,7 +12,7 @@ class Commands:
     C_POP = "C_POP"
     C_LABEL = "C_LABEL"
     C_GOTO = "C_GOTO"
-    C_IF = "C_IF"
+    C_IF_GOTO = "C_IF_GOTO"
     C_FUNCTION = "C_FUNCTION"
     C_RETURN = "C_RETURN"
     C_CALL = "C_CALL"
@@ -57,8 +57,16 @@ class Parser:
                 self.command_type = Commands.C_POP
             if self.current_command in ["add", "sub", "eq", "neg", "lt", "gt", "and", "or", "not"]:
                 self.command_type = Commands.C_ARITHMETIC
-            if self.command_type.startswith("call"):
+            if self.current_command.startswith("call"):
                 self.command_type = Commands.C_CALL
+            if self.current_command.startswith("if"):
+                self.command_type = Commands.C_IF_GOTO
+            if self.current_command.startswith("goto"):
+                self.command_type = Commands.C_GOTO
+            if self.current_command.startswith("label"):
+                self.command_type = Commands.C_LABEL
+            if self.current_command.startswith("return"):
+                self.command_type = Commands.C_RETURN
         else:
             print("current_command is not set.")
             self.current_command = None
