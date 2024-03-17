@@ -132,6 +132,15 @@ class CodeWriter:
 
         self._write_to_buffer(hack_command)
     
+    def write_return(self):
+        pass
+
+    def write_call(self):
+        pass
+
+    def write_function(self):
+        pass
+    
     def write_arithmetic(self, command: str):
         
         hack_command = self._translate_arithmetic(command)
@@ -155,6 +164,15 @@ class CodeWriter:
     def _write_to_buffer(self, hack_command):
         print(hack_command)
         self._output_buffer.write(hack_command)
+
+    def _translate_return(self, command):
+        pass
+
+    def _translate_call(self, command):
+        pass
+
+    def _translate_function(self, command):
+        pass
     
     def _translate_goto(self, command, label_name):
         return textwrap.dedent(f"""
@@ -471,14 +489,16 @@ def main():
             code_writer.write_goto(parser.current_command, parser.arg_1)
         if parser.command_type == Commands.C_IF_GOTO:
             code_writer.write_if_goto(parser.current_command, parser.arg_1)
+        if parser.command_type == Commands.C_FUNCTION:
+            code_writer.write_function()
+        if parser.command_type == Commands.C_CALL:
+            code_writer.write_call()
+        if parser.command_type == Commands.C_RETURN:
+            code_writer.write_return()
 
     code_writer.close()
-
-from typing import Optional
-
 
 if __name__ == "__main__":
 
     main()
 
-from typing import Optional
