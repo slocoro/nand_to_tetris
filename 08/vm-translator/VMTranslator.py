@@ -3,6 +3,7 @@ from io import StringIO
 import textwrap
 import uuid
 import sys
+import re
 
 
 @dataclass
@@ -84,7 +85,7 @@ class Parser:
 
     def _get_arg_2(self):
         if self.command_type in [Commands.C_PUSH, Commands.C_POP, Commands.C_FUNCTION, Commands.C_CALL]:
-            self.arg_2 = int(self.current_command.split(" ")[2])
+            self.arg_2 = int(re.sub("\s+(.*)", "", self.current_command.split(" ")[2]))
         else:
             self.arg_2 = None
 
@@ -134,11 +135,17 @@ class CodeWriter:
 
         self._write_to_buffer(hack_command)
     
-    def write_return(self):
-        pass
+    def write_return(self, command:str):
 
-    def write_call(self):
-        pass
+        hack_command = self._translate_return(command)
+
+        self._write_to_buffer(hack_command)
+
+    def write_call(self, command: str, function_name: str, num_args: int):
+
+        hack_command = self._translate_call(command, function_name, num_args)
+
+        self._write_to_buffer(hack_command)
 
     def write_function(self, command: str, function_name: str, num_local_vars: int):
         
@@ -171,13 +178,137 @@ class CodeWriter:
         self._output_buffer.write(hack_command)
 
     def _translate_return(self, command):
-        pass
+        frame = "R13"
+        ret = "R14"
+        
+        return textwrap.dedent(f"""
+            // {command}
+            @LCL            // FRAME=LCL
+            D=M
+            @{frame}
+            M=D
+            @{frame}        // RET = *(FRAME-5)
+            D=M
+            @5
+            D=D-A
+            A=D
+            D=M
+            @{ret}
+            M=D
+            @SP             // *ARG = pop(), pop to D
+            M=M-1
+            A=M
+            D=M
+            @ARG
+            A=M
+            M=D
+            @ARG            // SP = ARG + 1
+            D=M
+            @SP
+            M=D+1
+            @{frame}        // THAT = *(FRAME-1)
+            D=M
+            @1              // offest
+            D=D-A
+            A=D
+            D=M
+            @THAT
+            M=D
+            @{frame}        // THIS = *(FRAME-2)
+            D=M
+            @2              // offest
+            D=D-A
+            A=D
+            D=M
+            @THIS
+            M=D
+            @{frame}        // ARG = *(FRAME-3)
+            D=M
+            @3              // offest
+            D=D-A
+            A=D
+            D=M
+            @ARG
+            M=D
+            @{frame}        // LCL = *(FRAME-4)
+            D=M
+            @4              // offest
+            D=D-A
+            A=D
+            D=M
+            @LCL
+            M=D
+            @{ret}          // goto RET
+            A=M
+            0;JMP
+        """)
+    
+    def _translate_call(self, command: str, function_name:str , num_args: int):
+        return_address = str(uuid.uuid4())
 
-    def _translate_call(self, command):
-        pass
+        return textwrap.dedent(f"""
+            // {command}
+            @{return_address}        // push return_address
+            D=A
+            @SP
+            A=M
+            M=D
+            @SP         // SP++
+            M=M+1
+            @LCL        // push LCL
+            D=M
+            @SP
+            A=M
+            M=D
+            @SP         // SP++
+            M=M+1
+            @ARG        // push ARG
+            D=M
+            @SP
+            A=M
+            M=D
+            @SP         // SP++
+            M=M+1
+            @THIS       // push THIS
+            D=M
+            @SP
+            A=M
+            M=D
+            @SP         // SP++
+            M=M+1
+            @THAT       // push THAT
+            D=M
+            @SP
+            A=M
+            M=D
+            @SP         // SP++
+            M=M+1
+            @SP         // ARG = SP-num_args-5
+            D=M
+            @{num_args + 5}
+            D=D-A
+            @ARG
+            M=D
+            @SP         // LCL = SP
+            D=M
+            @LCL
+            M=D
+            @{function_name}    // goto function start
+            0;JMP
+            ({return_address})
+        """)
+        
 
-    def _translate_function(self, command: str, function_name: str, num_local_vars: str):
-        local_vars = "push constant 0\n" * num_local_vars
+    def _translate_function(self, command: str, function_name: str, num_local_vars: int):
+        local_vars = """
+            D=0
+            @SP
+            A=M
+            M=D
+            @SP
+            M=M+1
+        """ * num_local_vars
+        
         return textwrap.dedent(f"""
             // {command}
             ({function_name})
@@ -502,9 +633,9 @@ def main():
         if parser.command_type == Commands.C_FUNCTION:
             code_writer.write_function(parser.current_command, parser.arg_1, parser.arg_2)
         if parser.command_type == Commands.C_CALL:
-            code_writer.write_call()
+            code_writer.write_call(parser.current_command, parser.arg_1, parser.arg_2)
         if parser.command_type == Commands.C_RETURN:
-            code_writer.write_return()
+            code_writer.write_return(parser.current_command)
 
     code_writer.close()
 
