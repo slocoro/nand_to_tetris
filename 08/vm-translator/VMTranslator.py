@@ -7,6 +7,7 @@ import re
 from typing import Optional
 from pathlib import Path
 
+
 @dataclass
 class Commands:
     C_ARITHMETIC = "C_ARITHMETIC"
@@ -18,6 +19,7 @@ class Commands:
     C_FUNCTION = "C_FUNCTION"
     C_RETURN = "C_RETURN"
     C_CALL = "C_CALL"
+
 
 class Parser:
 
@@ -56,7 +58,9 @@ class Parser:
                 self.command_type = Commands.C_PUSH
             if self.current_command.startswith("pop"):
                 self.command_type = Commands.C_POP
-            if self.current_command.startswith(tuple(["add", "sub", "eq", "neg", "lt", "gt", "and", "or", "not"])):
+            if self.current_command.startswith(
+                tuple(["add", "sub", "eq", "neg", "lt", "gt", "and", "or", "not"])
+            ):
                 self.command_type = Commands.C_ARITHMETIC
             if self.current_command.startswith("call"):
                 self.command_type = Commands.C_CALL
@@ -84,7 +88,12 @@ class Parser:
         # return self.arg_1
 
     def _get_arg_2(self):
-        if self.command_type in [Commands.C_PUSH, Commands.C_POP, Commands.C_FUNCTION, Commands.C_CALL]:
+        if self.command_type in [
+            Commands.C_PUSH,
+            Commands.C_POP,
+            Commands.C_FUNCTION,
+            Commands.C_CALL,
+        ]:
             self.arg_2 = int(re.sub(r"\s+(.*)", "", self.current_command.split(" ")[2]))
         else:
             self.arg_2 = None
@@ -105,8 +114,8 @@ class Parser:
 
 
 class CodeWriter:
-    stack_base_address=256
-    temp_base_address=5
+    stack_base_address = 256
+    temp_base_address = 5
 
     segment_mapping = {
         "local": "LCL",
@@ -115,12 +124,9 @@ class CodeWriter:
         "that": "THAT",
         "temp": "TEMP",
         "pointer": "POINTER",
-        "static": "STATIC"
+        "static": "STATIC",
     }
-    pointer_mapping = {
-        0: "THIS",
-        1: "THAT"
-    }
+    pointer_mapping = {0: "THIS", 1: "THAT"}
 
     def __init__(self, output_path: Path, output_buffer=StringIO()):
         self._output_buffer = output_buffer
@@ -131,7 +137,8 @@ class CodeWriter:
         return_address = str(uuid.uuid4())
         num_args = 0
 
-        hack_command = textwrap.dedent(f"""
+        hack_command = textwrap.dedent(
+            f"""
             // Sys.init
             @256   // SP = 256
             D=A
@@ -186,7 +193,8 @@ class CodeWriter:
             @Sys.init    // goto function start
             0;JMP
             ({return_address})
-        """).lstrip()
+        """
+        ).lstrip()
 
         self._write_to_buffer(hack_command)
 
@@ -196,7 +204,7 @@ class CodeWriter:
 
         self._write_to_buffer(hack_command)
 
-    def write_goto(self, command:str, label_name: str, file_name: str):
+    def write_goto(self, command: str, label_name: str, file_name: str):
 
         hack_command = self._translate_goto(command, label_name, file_name)
 
@@ -208,7 +216,7 @@ class CodeWriter:
 
         self._write_to_buffer(hack_command)
 
-    def write_return(self, command:str):
+    def write_return(self, command: str):
 
         hack_command = self._translate_return(command)
 
@@ -232,7 +240,9 @@ class CodeWriter:
 
         self._write_to_buffer(hack_command)
 
-    def write_push_pop(self, command: str, command_type: str, segment: str, index: int, file_name: str):
+    def write_push_pop(
+        self, command: str, command_type: str, segment: str, index: int, file_name: str
+    ):
 
         hack_command = None
         if command_type == Commands.C_PUSH:
@@ -254,7 +264,8 @@ class CodeWriter:
         frame = "R13"
         ret = "R14"
 
-        return textwrap.dedent(f"""
+        return textwrap.dedent(
+            f"""
             // {command}
             @LCL            // FRAME=LCL
             D=M
@@ -314,12 +325,14 @@ class CodeWriter:
             @{ret}          // goto RET
             A=M
             0;JMP
-        """)
+        """
+        )
 
-    def _translate_call(self, command: str, function_name:str , num_args: int):
+    def _translate_call(self, command: str, function_name: str, num_args: int):
         return_address = str(uuid.uuid4())
 
-        return textwrap.dedent(f"""
+        return textwrap.dedent(
+            f"""
             // {command}
             @{return_address}        // push return_address
             D=A
@@ -369,34 +382,44 @@ class CodeWriter:
             @{function_name}    // goto function start
             0;JMP
             ({return_address})
-        """)
+        """
+        )
 
-
-    def _translate_function(self, command: str, function_name: str, num_local_vars: int):
-        local_vars = """
+    def _translate_function(
+        self, command: str, function_name: str, num_local_vars: int
+    ):
+        local_vars = (
+            """
             D=0
             @SP
             A=M
             M=D
             @SP
             M=M+1
-        """ * num_local_vars
+        """
+            * num_local_vars
+        )
 
-        return textwrap.dedent(f"""
+        return textwrap.dedent(
+            f"""
             // {command}
             ({function_name})
             {local_vars}
-        """)
+        """
+        )
 
     def _translate_goto(self, command, label_name, file_name):
-        return textwrap.dedent(f"""
+        return textwrap.dedent(
+            f"""
             // {command}
             @{file_name}${label_name}
             0;JEQ
-        """)
+        """
+        )
 
     def _translate_if_goto(self, command, label_name, file_name):
-        return textwrap.dedent(f"""
+        return textwrap.dedent(
+            f"""
             // {command}
             @SP
             M=M-1
@@ -404,20 +427,24 @@ class CodeWriter:
             D=M
             @{file_name}${label_name}
             D;JNE
-        """)
+        """
+        )
 
     def _translate_label(self, command, label_name, file_name):
-        return textwrap.dedent(f"""
+        return textwrap.dedent(
+            f"""
             // {command}
             ({file_name}${label_name})
-        """)
+        """
+        )
 
     def _translate_pop(self, command, segment, index, file_name):
         hack_command = None
         index_ = f"{file_name}.{index}" if segment == "static" else index
 
         if segment in ["local", "this", "that", "argument", "static"]:
-            hack_command = textwrap.dedent(f"""
+            hack_command = textwrap.dedent(
+                f"""
             // {command}
             @{index_}
             D=A
@@ -433,10 +460,12 @@ class CodeWriter:
             A=A+1
             A=M
             M=D
-            """)
+            """
+            )
 
         if segment in ["temp"]:
-            hack_command = textwrap.dedent(f"""
+            hack_command = textwrap.dedent(
+                f"""
             // {command}
             @{index_}
             D=A
@@ -452,13 +481,15 @@ class CodeWriter:
             A=A+1
             A=M
             M=D
-            """)
+            """
+            )
 
         if segment in ["pointer"]:
             # decrement stack pointer
             # select memory that is pointed to by SP
             # put that value in this or that
-            hack_command = textwrap.dedent(f"""
+            hack_command = textwrap.dedent(
+                f"""
             // {command}
             @SP
             M=M-1
@@ -466,7 +497,8 @@ class CodeWriter:
             D=M
             @{self.pointer_mapping[index_]}
             M=D
-            """)
+            """
+            )
 
         return hack_command
 
@@ -475,7 +507,8 @@ class CodeWriter:
         label_suffix = str(uuid.uuid4())
 
         if command.startswith("add"):
-            hack_command = textwrap.dedent(f"""
+            hack_command = textwrap.dedent(
+                f"""
             // {command}
             @SP
             M=M-1
@@ -489,9 +522,11 @@ class CodeWriter:
             M=M+D
             @SP
             M=M+1
-            """)
+            """
+            )
         if command.startswith("sub"):
-            hack_command = textwrap.dedent(f"""
+            hack_command = textwrap.dedent(
+                f"""
             // {command}
             @SP
             M=M-1
@@ -505,9 +540,11 @@ class CodeWriter:
             M=M-D
             @SP
             M=M+1
-            """)
+            """
+            )
         if command.startswith("neg"):
-            hack_command = textwrap.dedent(f"""
+            hack_command = textwrap.dedent(
+                f"""
             // {command}
             @SP
             M=M-1
@@ -516,9 +553,11 @@ class CodeWriter:
             M=-M
             @SP
             M=M+1
-            """)
+            """
+            )
         if command.startswith("not"):
-            hack_command = textwrap.dedent(f"""
+            hack_command = textwrap.dedent(
+                f"""
             // {command}
             @SP
             M=M-1
@@ -527,9 +566,11 @@ class CodeWriter:
             M=!M
             @SP
             M=M+1
-            """)
+            """
+            )
         if command.startswith("eq"):
-            hack_command = textwrap.dedent(f"""
+            hack_command = textwrap.dedent(
+                f"""
             // {command}
             @SP
             M=M-1
@@ -545,9 +586,11 @@ class CodeWriter:
             A=A-1
             M=M+1 // false value
             (end_{label_suffix})
-            """)
+            """
+            )
         if command.startswith("lt"):
-            hack_command = textwrap.dedent(f"""
+            hack_command = textwrap.dedent(
+                f"""
             // {command}
             @SP
             M=M-1
@@ -563,9 +606,11 @@ class CodeWriter:
             A=A-1
             M=M+1 // false value
             (end_{label_suffix})
-            """)
+            """
+            )
         if command.startswith("gt"):
-            hack_command = textwrap.dedent(f"""
+            hack_command = textwrap.dedent(
+                f"""
             // {command}
             @SP
             M=M-1
@@ -581,9 +626,11 @@ class CodeWriter:
             A=A-1
             M=M+1 // false value
             (end_{label_suffix})
-            """)
+            """
+            )
         if command.startswith("and"):
-            hack_command = textwrap.dedent(f"""
+            hack_command = textwrap.dedent(
+                f"""
             // {command}
             @SP
             M=M-1
@@ -597,9 +644,11 @@ class CodeWriter:
             M=D&M
             @SP
             M=M+1
-            """)
+            """
+            )
         if command.startswith("or"):
-            hack_command = textwrap.dedent(f"""
+            hack_command = textwrap.dedent(
+                f"""
             // {command}
             @SP
             M=M-1
@@ -613,16 +662,18 @@ class CodeWriter:
             M=D|M
             @SP
             M=M+1
-            """)
+            """
+            )
 
         return hack_command
 
-    def _translate_push(self, command: str, segment:str, index: int, file_name: str):
+    def _translate_push(self, command: str, segment: str, index: int, file_name: str):
         index_ = f"{file_name}.{index}" if segment == "static" else index
         hack_command = None
 
         if segment == "constant":
-            hack_command = textwrap.dedent(f"""
+            hack_command = textwrap.dedent(
+                f"""
             // {command}
             @{index_}
             D=A
@@ -631,9 +682,11 @@ class CodeWriter:
             M=D
             @SP
             M=M+1
-            """)
+            """
+            )
         elif segment in ["local", "this", "that", "argument", "static"]:
-            hack_command = textwrap.dedent(f"""
+            hack_command = textwrap.dedent(
+                f"""
             //// {command}
             @{index_}
             D=A
@@ -646,9 +699,11 @@ class CodeWriter:
             M=D
             @SP
             M=M+1
-            """)
+            """
+            )
         elif segment == "temp":
-            hack_command = textwrap.dedent(f"""
+            hack_command = textwrap.dedent(
+                f"""
             //// {command}
             @{index_}
             D=A
@@ -661,9 +716,11 @@ class CodeWriter:
             M=D
             @SP
             M=M+1
-            """)
+            """
+            )
         elif segment == "pointer":
-            hack_command = textwrap.dedent(f"""
+            hack_command = textwrap.dedent(
+                f"""
             //// {command}
             @{self.pointer_mapping[index]}
             D=M
@@ -672,11 +729,13 @@ class CodeWriter:
             M=D
             @SP
             M=M+1
-            """)
+            """
+            )
         return hack_command
 
     def _write_output_buffer(self):
         pass
+
 
 # the main is essentially the VM translator
 # could be made it's own class to make cleaner
@@ -697,23 +756,38 @@ def main():
     while parser.has_more_commands():
         parser.advance()
         if parser.command_type in [Commands.C_PUSH, Commands.C_POP]:
-            code_writer.write_push_pop(parser.current_command, parser.command_type, parser.arg_1, parser.arg_2, parser.file_name)
+            code_writer.write_push_pop(
+                parser.current_command,
+                parser.command_type,
+                parser.arg_1,
+                parser.arg_2,
+                parser.file_name,
+            )
         if parser.command_type == Commands.C_ARITHMETIC:
             code_writer.write_arithmetic(parser.current_command)
         if parser.command_type == Commands.C_LABEL:
-            code_writer.write_label(parser.current_command, parser.arg_1, parser.file_name)
+            code_writer.write_label(
+                parser.current_command, parser.arg_1, parser.file_name
+            )
         if parser.command_type == Commands.C_GOTO:
-            code_writer.write_goto(parser.current_command, parser.arg_1, parser.file_name)
+            code_writer.write_goto(
+                parser.current_command, parser.arg_1, parser.file_name
+            )
         if parser.command_type == Commands.C_IF_GOTO:
-            code_writer.write_if_goto(parser.current_command, parser.arg_1, parser.file_name)
+            code_writer.write_if_goto(
+                parser.current_command, parser.arg_1, parser.file_name
+            )
         if parser.command_type == Commands.C_FUNCTION:
-            code_writer.write_function(parser.current_command, parser.arg_1, parser.arg_2)
+            code_writer.write_function(
+                parser.current_command, parser.arg_1, parser.arg_2
+            )
         if parser.command_type == Commands.C_CALL:
             code_writer.write_call(parser.current_command, parser.arg_1, parser.arg_2)
         if parser.command_type == Commands.C_RETURN:
             code_writer.write_return(parser.current_command)
 
     code_writer.close()
+
 
 if __name__ == "__main__":
 
