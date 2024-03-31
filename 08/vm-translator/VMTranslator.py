@@ -5,7 +5,7 @@ import uuid
 import sys
 import re
 from typing import Optional
-
+from pathlib import Path
 
 @dataclass
 class Commands:
@@ -21,11 +21,13 @@ class Commands:
 
 class Parser:
 
-    def __init__(self, file_path: str):
+    def __init__(self, file_path: Path):
         self.file_path = file_path
-        self.current_command: Optional[str] = None
         self.file = self._read_file_line_by_line()
-        self.file_name = self._get_file_name()
+
+        self.current_command: str
+        self.arg_1: str
+        self.arg_2: int
 
     def has_more_commands(self):
         try:
@@ -47,9 +49,6 @@ class Parser:
         self._get_command_type()
         self._get_arg_1()
         self._get_arg_2()
-
-    def _get_file_name(self):
-        return self.file_path.split("/")[-1].split(".")[0]
 
     def _get_command_type(self):
         if self.current_command is not None:
@@ -86,14 +85,23 @@ class Parser:
 
     def _get_arg_2(self):
         if self.command_type in [Commands.C_PUSH, Commands.C_POP, Commands.C_FUNCTION, Commands.C_CALL]:
-            self.arg_2 = int(re.sub("\s+(.*)", "", self.current_command.split(" ")[2]))
+            self.arg_2 = int(re.sub(r"\s+(.*)", "", self.current_command.split(" ")[2]))
         else:
             self.arg_2 = None
 
     def _read_file_line_by_line(self):
-        with open(self.file_path, 'r') as file:
-            for line in file:
-                yield line.strip()
+        # with open(self.file_path, 'r') as file:
+        if self.file_path.is_file():
+            with self.file_path.open("r") as f:
+                for line in f:
+                    self.file_name = self.file_path.name.split(".")[0]
+                    yield line.strip()
+        else:
+            for file in self.file_path.glob("*.vm"):
+                with file.open("r") as f:
+                    for line in f:
+                        self.file_name = file.name.split(".")[0]
+                        yield line.strip()
 
 
 class CodeWriter:
@@ -114,25 +122,89 @@ class CodeWriter:
         1: "THAT"
     }
 
-    def __init__(self, output_path: str, output_buffer=StringIO()):
+    def __init__(self, output_path: Path, output_buffer=StringIO()):
         self._output_buffer = output_buffer
         self._output_path = output_path
+        # self._write_init_function()
 
-    def write_label(self, command: str, label_name: str):
+    def write_init(self):
+        return_address = str(uuid.uuid4())
+        num_args = 0
 
-        hack_command = self._translate_label(command, label_name)
+        hack_command = textwrap.dedent(f"""
+            // Sys.init
+            @256   // SP = 256
+            D=A
+            @SP
+            M=D
+            // call Sys.init
+            @{return_address}   // push return_address
+            D=A
+            @SP
+            A=M
+            M=D
+            @SP         // SP++
+            M=M+1
+            @LCL        // push LCL
+            D=M
+            @SP
+            A=M
+            M=D
+            @SP         // SP++
+            M=M+1
+            @ARG        // push ARG
+            D=M
+            @SP
+            A=M
+            M=D
+            @SP         // SP++
+            M=M+1
+            @THIS       // push THIS
+            D=M
+            @SP
+            A=M
+            M=D
+            @SP         // SP++
+            M=M+1
+            @THAT       // push THAT
+            D=M
+            @SP
+            A=M
+            M=D
+            @SP         // SP++
+            M=M+1
+            @SP         // ARG = SP-num_args-5
+            D=M
+            @{num_args + 5}
+            D=D-A
+            @ARG
+            M=D
+            @SP         // LCL = SP
+            D=M
+            @LCL
+            M=D
+            @Sys.init    // goto function start
+            0;JMP
+            ({return_address})
+        """).lstrip()
 
         self._write_to_buffer(hack_command)
 
-    def write_goto(self, command:str, label_name: str):
+    def write_label(self, command: str, label_name: str, file_name: str):
 
-        hack_command = self._translate_goto(command, label_name)
+        hack_command = self._translate_label(command, label_name, file_name)
 
         self._write_to_buffer(hack_command)
 
-    def write_if_goto(self, command: str, label_name: str):
+    def write_goto(self, command:str, label_name: str, file_name: str):
 
-        hack_command = self._translate_if_goto(command, label_name)
+        hack_command = self._translate_goto(command, label_name, file_name)
+
+        self._write_to_buffer(hack_command)
+
+    def write_if_goto(self, command: str, label_name: str, file_name: str):
+
+        hack_command = self._translate_if_goto(command, label_name, file_name)
 
         self._write_to_buffer(hack_command)
 
@@ -171,7 +243,7 @@ class CodeWriter:
         self._write_to_buffer(hack_command)
 
     def close(self):
-        with open(self._output_path, mode='w') as f:
+        with self._output_path.open("w") as f:
             print(self._output_buffer.getvalue(), file=f)
 
     def _write_to_buffer(self, hack_command):
@@ -316,29 +388,28 @@ class CodeWriter:
             {local_vars}
         """)
 
-    def _translate_goto(self, command, label_name):
+    def _translate_goto(self, command, label_name, file_name):
         return textwrap.dedent(f"""
             // {command}
-            @{label_name}
+            @{file_name}${label_name}
             0;JEQ
         """)
 
-    def _translate_if_goto(self, command, label_name):
-        # SP needs to be decremented after the comparison
+    def _translate_if_goto(self, command, label_name, file_name):
         return textwrap.dedent(f"""
             // {command}
             @SP
             M=M-1
             A=M
             D=M
-            @{label_name}
-            D;JGT
+            @{file_name}${label_name}
+            D;JNE
         """)
 
-    def _translate_label(self, command, label_name):
+    def _translate_label(self, command, label_name, file_name):
         return textwrap.dedent(f"""
             // {command}
-            ({label_name})
+            ({file_name}${label_name})
         """)
 
     def _translate_pop(self, command, segment, index, file_name):
@@ -458,7 +529,6 @@ class CodeWriter:
             M=M+1
             """)
         if command.startswith("eq"):
-            # wrong!! this needs revision
             hack_command = textwrap.dedent(f"""
             // {command}
             @SP
@@ -611,14 +681,19 @@ class CodeWriter:
 # the main is essentially the VM translator
 # could be made it's own class to make cleaner
 def main():
+    from pathlib import Path
 
-    input_path = sys.argv[1]
-    output_path = input_path.replace(".vm", ".asm")
+    input_path = Path(sys.argv[1])
+    if input_path.is_file():
+        output_path = input_path.with_suffix(".asm")
+    elif input_path.is_dir():
+        output_path = input_path / Path(input_path.name + ".asm")
 
     parser = Parser(input_path)
 
     code_writer = CodeWriter(output_path)
 
+    code_writer.write_init()
     while parser.has_more_commands():
         parser.advance()
         if parser.command_type in [Commands.C_PUSH, Commands.C_POP]:
@@ -626,11 +701,11 @@ def main():
         if parser.command_type == Commands.C_ARITHMETIC:
             code_writer.write_arithmetic(parser.current_command)
         if parser.command_type == Commands.C_LABEL:
-            code_writer.write_label(parser.current_command, parser.arg_1)
+            code_writer.write_label(parser.current_command, parser.arg_1, parser.file_name)
         if parser.command_type == Commands.C_GOTO:
-            code_writer.write_goto(parser.current_command, parser.arg_1)
+            code_writer.write_goto(parser.current_command, parser.arg_1, parser.file_name)
         if parser.command_type == Commands.C_IF_GOTO:
-            code_writer.write_if_goto(parser.current_command, parser.arg_1)
+            code_writer.write_if_goto(parser.current_command, parser.arg_1, parser.file_name)
         if parser.command_type == Commands.C_FUNCTION:
             code_writer.write_function(parser.current_command, parser.arg_1, parser.arg_2)
         if parser.command_type == Commands.C_CALL:
