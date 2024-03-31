@@ -1,9 +1,10 @@
 from dataclasses import dataclass
-from io import StringIO 
+from io import StringIO
 import textwrap
 import uuid
 import sys
 import re
+from typing import Optional
 
 
 @dataclass
@@ -73,7 +74,7 @@ class Parser:
         else:
             print("current_command is not set.")
             self.current_command = None
-    
+
     def _get_arg_1(self):
         if self.command_type == Commands.C_ARITHMETIC:
             self.arg_1 == self.current_command
@@ -93,7 +94,7 @@ class Parser:
         with open(self.file_path, 'r') as file:
             for line in file:
                 yield line.strip()
-    
+
 
 class CodeWriter:
     stack_base_address=256
@@ -118,23 +119,23 @@ class CodeWriter:
         self._output_path = output_path
 
     def write_label(self, command: str, label_name: str):
-        
+
         hack_command = self._translate_label(command, label_name)
 
         self._write_to_buffer(hack_command)
-    
+
     def write_goto(self, command:str, label_name: str):
-        
+
         hack_command = self._translate_goto(command, label_name)
 
         self._write_to_buffer(hack_command)
-    
+
     def write_if_goto(self, command: str, label_name: str):
-        
+
         hack_command = self._translate_if_goto(command, label_name)
 
         self._write_to_buffer(hack_command)
-    
+
     def write_return(self, command:str):
 
         hack_command = self._translate_return(command)
@@ -148,17 +149,17 @@ class CodeWriter:
         self._write_to_buffer(hack_command)
 
     def write_function(self, command: str, function_name: str, num_local_vars: int):
-        
+
         hack_command = self._translate_function(command, function_name, num_local_vars)
-        
+
         self._write_to_buffer(hack_command)
-    
+
     def write_arithmetic(self, command: str):
-        
+
         hack_command = self._translate_arithmetic(command)
 
         self._write_to_buffer(hack_command)
-    
+
     def write_push_pop(self, command: str, command_type: str, segment: str, index: int, file_name: str):
 
         hack_command = None
@@ -180,7 +181,7 @@ class CodeWriter:
     def _translate_return(self, command):
         frame = "R13"
         ret = "R14"
-        
+
         return textwrap.dedent(f"""
             // {command}
             @LCL            // FRAME=LCL
@@ -242,7 +243,7 @@ class CodeWriter:
             A=M
             0;JMP
         """)
-    
+
     def _translate_call(self, command: str, function_name:str , num_args: int):
         return_address = str(uuid.uuid4())
 
@@ -297,7 +298,7 @@ class CodeWriter:
             0;JMP
             ({return_address})
         """)
-        
+
 
     def _translate_function(self, command: str, function_name: str, num_local_vars: int):
         local_vars = """
@@ -308,13 +309,13 @@ class CodeWriter:
             @SP
             M=M+1
         """ * num_local_vars
-        
+
         return textwrap.dedent(f"""
             // {command}
             ({function_name})
             {local_vars}
         """)
-           
+
     def _translate_goto(self, command, label_name):
         return textwrap.dedent(f"""
             // {command}
@@ -333,13 +334,13 @@ class CodeWriter:
             @{label_name}
             D;JGT
         """)
-        
+
     def _translate_label(self, command, label_name):
         return textwrap.dedent(f"""
             // {command}
             ({label_name})
         """)
-        
+
     def _translate_pop(self, command, segment, index, file_name):
         hack_command = None
         index_ = f"{file_name}.{index}" if segment == "static" else index
@@ -362,7 +363,7 @@ class CodeWriter:
             A=M
             M=D
             """)
-        
+
         if segment in ["temp"]:
             hack_command = textwrap.dedent(f"""
             // {command}
@@ -381,7 +382,7 @@ class CodeWriter:
             A=M
             M=D
             """)
-        
+
         if segment in ["pointer"]:
             # decrement stack pointer
             # select memory that is pointed to by SP
@@ -395,7 +396,7 @@ class CodeWriter:
             @{self.pointer_mapping[index_]}
             M=D
             """)
-        
+
         return hack_command
 
     def _translate_arithmetic(self, command: str):
@@ -613,11 +614,11 @@ def main():
 
     input_path = sys.argv[1]
     output_path = input_path.replace(".vm", ".asm")
-    
+
     parser = Parser(input_path)
-    
+
     code_writer = CodeWriter(output_path)
-    
+
     while parser.has_more_commands():
         parser.advance()
         if parser.command_type in [Commands.C_PUSH, Commands.C_POP]:
@@ -642,4 +643,3 @@ def main():
 if __name__ == "__main__":
 
     main()
-
