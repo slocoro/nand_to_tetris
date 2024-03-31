@@ -132,9 +132,11 @@ class CodeWriter:
         self._output_buffer = output_buffer
         self._output_path = output_path
         # self._write_init_function()
+        self.call_count = 1
 
     def write_init(self):
-        return_address = str(uuid.uuid4())
+        return_address = f"Sys.init$ret{self.call_count}"
+        self.call_count += 1
         num_args = 0
 
         hack_command = textwrap.dedent(
@@ -329,7 +331,8 @@ class CodeWriter:
         )
 
     def _translate_call(self, command: str, function_name: str, num_args: int):
-        return_address = str(uuid.uuid4())
+        return_address = f"{function_name}$ret{self.call_count}"
+        self.call_count += 1
 
         return textwrap.dedent(
             f"""
@@ -504,7 +507,8 @@ class CodeWriter:
 
     def _translate_arithmetic(self, command: str):
         hack_command = None
-        label_suffix = str(uuid.uuid4())
+        label_suffix = self.call_count
+        self.call_count += 1
 
         if command.startswith("add"):
             hack_command = textwrap.dedent(
