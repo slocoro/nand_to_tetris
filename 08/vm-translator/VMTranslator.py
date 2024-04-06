@@ -1,10 +1,8 @@
 from dataclasses import dataclass
 from io import StringIO
 import textwrap
-import uuid
 import sys
 import re
-from typing import Optional
 from pathlib import Path
 
 
@@ -131,7 +129,6 @@ class CodeWriter:
     def __init__(self, output_path: Path, output_buffer=StringIO()):
         self._output_buffer = output_buffer
         self._output_path = output_path
-        # self._write_init_function()
         self.call_count = 1
 
     def write_init(self):
@@ -756,7 +753,11 @@ def main():
 
     code_writer = CodeWriter(output_path)
 
-    code_writer.write_init()
+    # only produce init code when input is a valid program (a directory)
+    # single .vm files are not valid programs
+    # https://www.coursera.org/learn/nand2tetris2/discussions/forums/I7xg3Cj3Eea7jBLLHPwd0w/threads/768LaQEFEeec9hKaXoylVA
+    if input_path.is_dir():
+        code_writer.write_init()
     while parser.has_more_commands():
         parser.advance()
         if parser.command_type in [Commands.C_PUSH, Commands.C_POP]:
