@@ -55,23 +55,33 @@ class SquareGame {
       
       while (~exit) {
          // waits for a key to be pressed
+	 // at first no key is pressed (key=0) so remains in this loop
+	 // moveSquare does nothing if key=0
+	 // once a key is pressed it exits out of this loop
          while (key = 0) {
             let key = Keyboard.keyPressed();
             do moveSquare();
          }
+
          if (key = 81)  { let exit = true; }     // q key
-         if (key = 90)  { do square.decSize(); } // z key
-         if (key = 88)  { do square.incSize(); } // x key
+         // if (key = 90)  { do square.decSize(); } // z key
+         // if (key = 88)  { do square.incSize(); } // x key
          if (key = 131) { let direction = 1; }   // up arrow
          if (key = 133) { let direction = 2; }   // down arrow
          if (key = 130) { let direction = 3; }   // left arrow
          if (key = 132) { let direction = 4; }   // right arrow
 
          // waits for the key to be released
+	 // square keeps moving after key is released because the movement is based
+	 // on the direction var which doesn't get reset when no key is pressed
+	 // it only gets reset once another arrow key is pressed
          while (~(key = 0)) {
             let key = Keyboard.keyPressed();
             do moveSquare();
          }
+
+	 // collision logic goes here
+
      } // while
      return;
    }
