@@ -1,0 +1,19 @@
+How do labels work in Hack machine language??
+
+Assume this code:
+
+(my_label)
+A=D
+M=D
+...
+
+When the assembler sees "(my_label)" it memorizes the number (line number n means the n-th command in your program)
+of the line right after it. In this case it memorises the line number( or operation number) of "A=D". This line number
+is then used in combination with a jump operation (see below) to go (back) this line when the program needs it.
+
+Don't confuse ROM (the memory that holds the program) and RAM (the memory that has the stack and your variables, object, ...)!!!
+
+jump example:
+
+@21
+0;JEQ

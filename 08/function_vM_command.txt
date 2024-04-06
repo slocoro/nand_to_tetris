@@ -1,0 +1,20 @@
+Why do you need to do "PUSH 0" k number of times when encountering the "function f k"?
+
+"call f n" which typically initiates a function call (therefore happens before "function f k" 
+saves the callers state by pushing the base address of the memory segments (LCL, THIS, THAT, ...)
+onto the stack. This is done so that you can recreate the callers state after the function call (and return)
+is complete. One of the operations of "call f n" sets LCL=SP.
+
+By adding k "PUSH 0" when translating the "function f k" we reserve memory space for the 
+functions local variable. This also has the effect of incrementing SP each time we perform 
+a "PUSH 0". For example, after pushing 0 onto the stack 2 times, LCL still has the same 
+value but SP is now SP+2.
+
+This means that if in our high-level function we have this expression "x=2" 
+we first push 2 onto the stack (PUSH constant 2) and then pop that value into LCL 0
+(POP local 0).
+
+If we didn't have the step that initialised these local variables by pushing 0s onto
+the stack we would the LCL segment would interfere with the pointer SP. The SP pointer might point to one 
+of the local variables instead of to the top of the stack. Local variables could be overwritten
+by other operations in the function.
