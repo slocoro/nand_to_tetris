@@ -2,3 +2,6 @@
 *.class
 *.hack
 .venv
+*.asm
+*.out
+09/**/*.vm
