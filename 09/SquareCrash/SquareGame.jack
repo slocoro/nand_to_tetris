@@ -131,8 +131,8 @@ class SquareGame {
       }
 
       if (exit) {
-         do Output.moveCursor(10,15);
-         do Output.printString("Game Over: You crashed in a wall!");
+         do Output.moveCursor(9,15);
+         do Output.printString("Game Over: You crashed into a wall!");
          do Sys.halt();
       }
       return;
