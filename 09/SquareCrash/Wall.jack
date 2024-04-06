@@ -1,0 +1,38 @@
+// Implements a graphical wall.
+
+class Wall {
+
+    field int x, y;
+    field int length;  // length of the wall
+
+    constructor Wall new(int ax, int ay, int alength) {
+        let x = ax;
+	let y = ay;
+	let length = alength;
+	do draw();
+	return this;
+    }
+
+
+   /** Disposes this wall. */
+   method void dispose() {
+      do Memory.deAlloc(this);
+      return;
+   }
+
+   /** Draws this wall in its current (x,y) location */
+   method void draw() {
+      // Draws the wall using the color black
+      do Screen.setColor(true);
+      do Screen.drawRectangle(x, y, x + 15, y + length);
+      return;
+   }
+
+   /** Erases this wall. */
+   method void erase() {
+      // Draws the wall using the color white (background color)
+      do Screen.setColor(false);
+      do Screen.drawRectangle(x, y, x + 5, y + length);
+      return;
+   }
+}
