@@ -41,25 +41,25 @@ class Square {
       return;
    }
 
-    /** Increments the square size by 2 pixels (if possible). */
-   method void incSize() {
-      if (((y + size) < 254) & ((x + size) < 510)) {
-         do erase();
-         let size = size + 2;
-         do draw();
-      }
-      return;
-   }
+    /** Returns the square's left edge. */
+    method int getLeft() {
+        return x;
+    }
 
-   /** Decrements the square size by 2 pixels (if possible). */
-   method void decSize() {
-      if (size > 2) {
-         do erase();
-         let size = size - 2;
-         do draw();
-      }
-      return;
-   }
+    /** Returns the squares's right edge. */
+    method int getRight() {
+        return x + size;
+    }
+
+    /** Returns the square's top edge. */
+    method int getTop() {
+        return y;
+    }
+
+    /** Returns the squares's bottom edge. */
+    method int getBottom() {
+        return y + size;
+    }
 
    /** Moves this square up by 2 pixels (if possible). */
    method void moveUp() {

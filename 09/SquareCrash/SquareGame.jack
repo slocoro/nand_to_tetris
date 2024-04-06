@@ -19,6 +19,7 @@ class SquareGame {
    field Wall wall; // the wall you need to avoid
    field int direction; // the square's current direction: 
                         // 0=none, 1=up, 2=down, 3=left, 4=right
+   field boolean exit;
 
    /** Constructs a new square dance game. */
    constructor SquareGame new() {
@@ -50,8 +51,6 @@ class SquareGame {
    /** Runs the game: handles the user's inputs and moves the square accordingly */
    method void run() {
       var char key;  // the key currently pressed by the user
-      var boolean exit;
-      let exit = false;
       
       while (~exit) {
          // waits for a key to be pressed
@@ -61,6 +60,7 @@ class SquareGame {
          while (key = 0) {
             let key = Keyboard.keyPressed();
             do moveSquare();
+            do checkCollision();
          }
 
          if (key = 81)  { let exit = true; }     // q key
@@ -78,12 +78,64 @@ class SquareGame {
          while (~(key = 0)) {
             let key = Keyboard.keyPressed();
             do moveSquare();
+            do checkCollision();
          }
-
-	 // collision logic goes here
 
      } // while
      return;
+   }
+
+   method void checkCollision() {
+      // collision logic
+      // if square goes right
+      // if right side of square touches left side of wall then exit=true
+      // if square goes left
+      // if left side of square touches right side off wall then exit=true
+      // need these conditions for up/down too
+
+      var int squareLeft, squareRight, wallLeft, wallRight;
+      var int squareTop, squareBottom, wallTop, wallBottom;
+
+      let squareLeft = square.getLeft();
+      let squareRight = square.getRight();
+      let wallLeft = wall.getLeft();
+      let wallRight = wall.getRight();
+      let squareTop = square.getTop();
+      let squareBottom = square.getBottom();
+      let wallTop = wall.getTop();
+      let wallBottom = wall.getBottom();
+
+      if ((squareRight > wallLeft) 
+         & (squareBottom > wallTop)
+	 & (squareTop < wallBottom)
+	 & (direction = 4)) {
+         let exit = true;
+      }
+      if ((squareLeft < wallRight) 
+         & (squareBottom > wallTop)
+	 & (squareTop < wallBottom)
+	 & (direction = 3)) {
+         let exit = true;
+      }
+      if ((squareLeft < wallRight) 
+         & (squareRight > wallLeft)
+	 & (squareTop < wallBottom)
+	 & (direction = 1)) {
+         let exit = true;
+      }
+      if ((squareLeft < wallRight) 
+         & (squareRight > wallLeft)
+	 & (squareBottom > wallTop)
+	 & (direction = 2)) {
+         let exit = true;
+      }
+
+      if (exit) {
+         do Output.moveCursor(10,15);
+         do Output.printString("Game Over: You crashed in a wall!");
+         do Sys.halt();
+      }
+      return;
    }
 }
 

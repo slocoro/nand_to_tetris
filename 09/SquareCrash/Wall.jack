@@ -4,11 +4,14 @@ class Wall {
 
     field int x, y;
     field int length;  // length of the wall
+    field int width;  // width of the wall
 
     constructor Wall new(int ax, int ay, int alength) {
         let x = ax;
 	let y = ay;
 	let length = alength;
+	// var int width;
+	let width = 15;
 	do draw();
 	return this;
     }
@@ -24,9 +27,29 @@ class Wall {
    method void draw() {
       // Draws the wall using the color black
       do Screen.setColor(true);
-      do Screen.drawRectangle(x, y, x + 15, y + length);
+      do Screen.drawRectangle(x, y, x + width, y + length);
       return;
    }
+
+    /** Returns the wall's left edge. */
+    method int getLeft() {
+        return x;
+    }
+
+    /** Returns the wall's right edge. */
+    method int getRight() {
+        return x + width;
+    }
+
+    /** Returns the wall's top edge. */
+    method int getTop() {
+        return y;
+    }
+
+    /** Returns the wall's bottom edge. */
+    method int getBottom() {
+        return y + length;
+    }
 
    /** Erases this wall. */
    method void erase() {
