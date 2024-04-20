@@ -74,6 +74,38 @@ class JackTokenizer:
             return False
         return True
 
+    # TODO: refactor to reduce duplication
+    def peek(self):
+        if self.has_more_tokens():
+            # match keyword
+            match = KEYWORD_PATTERN.match(self._content)
+            if match:
+                return match.group(1), JackTokenizer.KEYWORD
+
+            # match identifier (variable)
+            match = IDENTIFIER_PATTERN.match(self._content)
+            if match:
+                return match.group(1), JackTokenizer.IDENTIFIER
+
+            # match symbol
+            match = SYMBOL_PATTERN.match(self._content)
+            if match:
+                return match.group(1), JackTokenizer.SYMBOL
+
+            # match integer constant
+            match = INTEGER_CONSTANT_PATTERN.match(self._content)
+            if match:
+                return match.group(1), JackTokenizer.INTEGER_CONSTANT
+
+            # match string constant
+            match = STRING_CONSTANT_PATTERN.match(self._content)
+            if match:
+                return match.group(1), JackTokenizer.STRING_CONST
+
+        # should this return something more informative???
+        else:
+            return False
+
     def _update_token(self, match) -> None:
         self.current_token = match.group(1)
         self._content = self._content[match.end() :]
