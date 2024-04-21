@@ -102,7 +102,7 @@ class JackTokenizer:
             if match:
                 return match.group(1), JackTokenizer.STRING_CONST
 
-        # should this return something more informative???
+        # should this return something more informative???
         else:
             return False
 
@@ -111,7 +111,7 @@ class JackTokenizer:
         self._content = self._content[match.end() :]
 
     def _read_and_tokenize_input(self):
-        self._content = Path(file_path).open("r").read()
+        self._content = Path(self.file_path).open("r").read()
         self._content = self._content.split("\n")
 
         self._remove_comments()
