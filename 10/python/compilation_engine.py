@@ -2,10 +2,6 @@ from io import StringIO
 from jack_tokenizer import JackTokenizer
 from pathlib import Path
 
-
-class CompilationError(Exception):
-    pass
-
 OP_LIST = [
     "+",
     "-",
@@ -17,6 +13,12 @@ OP_LIST = [
     ">",
     "=",
 ]
+
+
+class CompilationError(Exception):
+    pass
+
+
 class CompilationEngine:
     def __init__(
         self,
@@ -93,7 +95,7 @@ class CompilationEngine:
             )
             self._tokenizer.advance()
 
-        self._output_buffer.write(f"</{self._stating_token}>\n")
+        self._output_buffer.write(f"</{self._stating_token}>")
 
     def compile_class_var_dec(self):
         if self._tokenizer.current_token in ["static", "field"]:
@@ -431,12 +433,8 @@ class CompilationEngine:
         )
         self._tokenizer.advance()
 
-        # var name
-        self._output_buffer.write(self._indent * self._tab_width)
-        self._output_buffer.write(
-            f"<identifier> {self._tokenizer.current_token} </identifier>\n"
-        )
-        self._tokenizer.advance()
+        # expression
+        self.compile_expression()
 
         # ;
         self._output_buffer.write(self._indent * self._tab_width)
@@ -468,12 +466,8 @@ class CompilationEngine:
         )
         self._tokenizer.advance()
 
-        # var name
-        self._output_buffer.write(self._indent * self._tab_width)
-        self._output_buffer.write(
-            f"<identifier> {self._tokenizer.current_token} </identifier>\n"
-        )
-        self._tokenizer.advance()
+        # expression
+        self.compile_expression()
 
         # )
         self._output_buffer.write(self._indent * self._tab_width)
@@ -489,9 +483,7 @@ class CompilationEngine:
         )
         self._tokenizer.advance()
 
-        # # var name
-        # self._output_buffer.write(f"<identifier> {self._tokenizer.current_token} <\identifier>\n")
-        # self._tokenizer.advance()
+        # statements
         self.compile_statements()
 
         # }
@@ -505,7 +497,7 @@ class CompilationEngine:
             # else
             self._output_buffer.write(self._indent * self._tab_width)
             self._output_buffer.write(
-                f"<symbol> {self._tokenizer.current_token} </symbol>\n"
+                f"<keyword> {self._tokenizer.current_token} </keyword>\n"
             )
             self._tokenizer.advance()
 
@@ -698,11 +690,15 @@ class CompilationEngine:
         if self._tokenizer.current_token == "(":
             pass
         # check is constant
-        elif self._tokenizer.current_token in [
-            JackTokenizer.INTEGER_CONSTANT,
-            JackTokenizer.STRING_CONST,
-            JackTokenizer.IDENTIFIER,
-        ] or self._tokenizer.current_token in OP_LIST:
+        elif (
+            self._tokenizer.token_type
+            in [
+                JackTokenizer.INTEGER_CONSTANT,
+                JackTokenizer.STRING_CONST,
+                JackTokenizer.IDENTIFIER,
+            ]
+            or self._tokenizer.current_token in OP_LIST
+        ):
             if self._tokenizer.current_token in OP_LIST:
                 self._output_buffer.write(self._indent * self._tab_width)
                 self._output_buffer.write(
