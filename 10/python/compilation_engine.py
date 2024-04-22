@@ -33,7 +33,7 @@ class CompilationEngine:
         self._indent = 0
         self._tab_width = " " * 2
         self._stating_token = starting_token
-        self._output_path = Path("../ExpressionLessSquare/Main-2.xml")
+        self._output_path = Path("../ExpressionLessSquare/Square-2.xml")
 
     def write_output(self):
         with self._output_path.open("w") as f:
@@ -98,11 +98,11 @@ class CompilationEngine:
         self._output_buffer.write(f"</{self._stating_token}>")
 
     def compile_class_var_dec(self):
-        if self._tokenizer.current_token in ["static", "field"]:
-            self._output_buffer.write(self._indent * self._tab_width)
-            self._output_buffer.write(f"<classVarDec>\n")
-            self._indent += 1
+        self._output_buffer.write(self._indent * self._tab_width)
+        self._output_buffer.write(f"<classVarDec>\n")
+        self._indent += 1
 
+        while self._tokenizer.current_token in ["static", "field"]:
             self._output_buffer.write(self._indent * self._tab_width)
             self._output_buffer.write(
                 f"<keyword> {self._tokenizer.current_token} </keyword>\n"
@@ -154,13 +154,14 @@ class CompilationEngine:
                 )
                 self._tokenizer.advance()
 
-            self._indent -= 1
-            self._output_buffer.write(self._indent * self._tab_width)
-            self._output_buffer.write(f"</classVarDec>\n")
-        else:
-            raise CompilationError(
-                f"Invalid program. Current token {self._tokenizer.current_token}"
-            )
+        # else:
+        #     raise CompilationError(
+        #         f"Invalid program. Current token {self._tokenizer.current_token}"
+        #     )
+
+        self._indent -= 1
+        self._output_buffer.write(self._indent * self._tab_width)
+        self._output_buffer.write(f"</classVarDec>\n")
 
     def compile_subroutine_dec(self):
         # self._tokenizer.advance()
@@ -749,7 +750,7 @@ class CompilationEngine:
 
 
 if __name__ == "__main__":
-    file_path = "../ExpressionLessSquare/Main.jack"
+    file_path = "../ExpressionLessSquare/Square.jack"
     jack_tokenizer = JackTokenizer(file_path)
 
     compilation_engine = CompilationEngine(
