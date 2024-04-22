@@ -33,7 +33,7 @@ class CompilationEngine:
         self._indent = 0
         self._tab_width = " " * 2
         self._stating_token = starting_token
-        self._output_path = Path("../ExpressionLessSquare/Square-2.xml")
+        self._output_path = Path("../ExpressionLessSquare/SquareGame-2.xml")
 
     def write_output(self):
         with self._output_path.open("w") as f:
@@ -115,10 +115,10 @@ class CompilationEngine:
                     f"<keyword> {self._tokenizer.current_token} </keyword>\n"
                 )
                 self._tokenizer.advance()
-            elif self._tokenizer.token_type == JackTokenizer.KEYWORD:
+            elif self._tokenizer.token_type == JackTokenizer.IDENTIFIER:
                 self._output_buffer.write(self._indent * self._tab_width)
                 self._output_buffer.write(
-                    f"<keyword> {self._tokenizer.current_token} </keyword>\n"
+                    f"<identifier> {self._tokenizer.current_token} </identifier>\n"
                 )
                 self._tokenizer.advance()
 
@@ -131,6 +131,7 @@ class CompilationEngine:
                 self._tokenizer.advance()
 
             # ,
+            # breakpoint()
             if self._tokenizer.current_token == ",":
                 while self._tokenizer.current_token != ";":
                     self._output_buffer.write(self._indent * self._tab_width)
@@ -301,7 +302,7 @@ class CompilationEngine:
 
     def compile_var_dec(self):
 
-        if self._tokenizer.current_token == "var":
+        while self._tokenizer.current_token == "var":
             self._output_buffer.write(self._indent * self._tab_width)
             self._output_buffer.write(f"<varDec>\n")
             self._indent += 1
@@ -397,7 +398,6 @@ class CompilationEngine:
         self._tokenizer.advance()
 
         # var name
-        # THIS IS THE PART THAT NEEDS FIXING
         self._output_buffer.write(self._indent * self._tab_width)
         self._output_buffer.write(
             f"<identifier> {self._tokenizer.current_token} </identifier>\n"
@@ -518,12 +518,8 @@ class CompilationEngine:
         )
         self._tokenizer.advance()
 
-        # var name
-        self._output_buffer.write(self._indent * self._tab_width)
-        self._output_buffer.write(
-            f"<identifier> {self._tokenizer.current_token} </identifier>\n"
-        )
-        self._tokenizer.advance()
+        # expression
+        self.compile_expression()
 
         # )
         self._output_buffer.write(self._indent * self._tab_width)
@@ -539,12 +535,7 @@ class CompilationEngine:
         )
         self._tokenizer.advance()
 
-        # var name
-        self._output_buffer.write(self._indent * self._tab_width)
-        self._output_buffer.write(
-            f"<identifier> {self._tokenizer.current_token} </identifier>\n"
-        )
-        self._tokenizer.advance()
+        self.compile_statements()
 
         # }
         self._output_buffer.write(self._indent * self._tab_width)
@@ -674,7 +665,6 @@ class CompilationEngine:
         self._output_buffer.write(f"<term>\n")
         self._indent += 1
 
-        # breakpoint()
         if self._tokenizer.current_token == "(":
             pass
         # check is constant
@@ -747,7 +737,7 @@ class CompilationEngine:
 
 
 if __name__ == "__main__":
-    file_path = "../ExpressionLessSquare/Square.jack"
+    file_path = "../ExpressionLessSquare/SquareGame.jack"
     jack_tokenizer = JackTokenizer(file_path)
 
     compilation_engine = CompilationEngine(
