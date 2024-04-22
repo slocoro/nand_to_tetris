@@ -86,8 +86,6 @@ class CompilationEngine:
 
             self.compile_subroutine_dec()
 
-            # self.compile_statements()
-
             # compile "{"
             self._output_buffer.write(self._indent * self._tab_width)
             self._output_buffer.write(
@@ -98,11 +96,12 @@ class CompilationEngine:
         self._output_buffer.write(f"</{self._stating_token}>")
 
     def compile_class_var_dec(self):
-        self._output_buffer.write(self._indent * self._tab_width)
-        self._output_buffer.write(f"<classVarDec>\n")
-        self._indent += 1
 
         while self._tokenizer.current_token in ["static", "field"]:
+            self._output_buffer.write(self._indent * self._tab_width)
+            self._output_buffer.write(f"<classVarDec>\n")
+            self._indent += 1
+
             self._output_buffer.write(self._indent * self._tab_width)
             self._output_buffer.write(
                 f"<keyword> {self._tokenizer.current_token} </keyword>\n"
@@ -147,24 +146,17 @@ class CompilationEngine:
                     self._tokenizer.advance()
 
             # ;
-            if self._tokenizer.token_type == JackTokenizer.SYMBOL:
-                self._output_buffer.write(self._indent * self._tab_width)
-                self._output_buffer.write(
-                    f"<symbol> {self._tokenizer.current_token} </symbol>\n"
-                )
-                self._tokenizer.advance()
+            self._output_buffer.write(self._indent * self._tab_width)
+            self._output_buffer.write(
+                f"<symbol> {self._tokenizer.current_token} </symbol>\n"
+            )
+            self._tokenizer.advance()
 
-        # else:
-        #     raise CompilationError(
-        #         f"Invalid program. Current token {self._tokenizer.current_token}"
-        #     )
-
-        self._indent -= 1
-        self._output_buffer.write(self._indent * self._tab_width)
-        self._output_buffer.write(f"</classVarDec>\n")
+            self._indent -= 1
+            self._output_buffer.write(self._indent * self._tab_width)
+            self._output_buffer.write(f"</classVarDec>\n")
 
     def compile_subroutine_dec(self):
-        # self._tokenizer.advance()
         if self._tokenizer.current_token in ["constructor", "function", "method"]:
 
             while self._tokenizer.token_type == JackTokenizer.KEYWORD:
@@ -178,19 +170,15 @@ class CompilationEngine:
                 )
                 self._tokenizer.advance()
 
-                # void or type
-                # TODO: tag might be wrong if the current token is an identifier
-                # same for classVarDec
-                if (
-                    self._tokenizer.token_type == JackTokenizer.IDENTIFIER
-                    or self._tokenizer.token_type in ["int", "char", "boolean"]
-                ):
+                if self._tokenizer.token_type == JackTokenizer.IDENTIFIER:
                     self._output_buffer.write(self._indent * self._tab_width)
                     self._output_buffer.write(
-                        f"<keyword> {self._tokenizer.current_token} </keyword>\n"
+                        f"<identifier> {self._tokenizer.current_token} </identifier>\n"
                     )
                     self._tokenizer.advance()
-                elif self._tokenizer.current_token in ["void"]:
+                elif self._tokenizer.current_token in [
+                    "void"
+                ] or self._tokenizer.token_type in ["int", "char", "boolean"]:
                     self._output_buffer.write(self._indent * self._tab_width)
                     self._output_buffer.write(
                         f"<keyword> {self._tokenizer.current_token} </keyword>\n"
@@ -264,27 +252,20 @@ class CompilationEngine:
                 while self._tokenizer.current_token != ")":
                     self._output_buffer.write(self._indent * self._tab_width)
                     self._output_buffer.write(
-                        f"<{self._tokenizer.token_type}> {self._tokenizer.current_token} <\{self._tokenizer.token_type}>\n"
+                        f"<{self._tokenizer.token_type}> {self._tokenizer.current_token} </{self._tokenizer.token_type}>\n"
                     )
                     self._tokenizer.advance()
 
-                # )
-                self._output_buffer.write(self._indent * self._tab_width)
-                self._output_buffer.write(
-                    f"<symbol> {self._tokenizer.current_token} </symbol>\n"
-                )
-                self._tokenizer.advance()
-        else:
-            self._indent -= 1
-            self._output_buffer.write(self._indent * self._tab_width)
-            self._output_buffer.write(f"</parameterList>\n")
+        self._indent -= 1
+        self._output_buffer.write(self._indent * self._tab_width)
+        self._output_buffer.write(f"</parameterList>\n")
 
-            # )
-            self._output_buffer.write(self._indent * self._tab_width)
-            self._output_buffer.write(
-                f"<symbol> {self._tokenizer.current_token} </symbol>\n"
-            )
-            self._tokenizer.advance()
+        # )
+        self._output_buffer.write(self._indent * self._tab_width)
+        self._output_buffer.write(
+            f"<symbol> {self._tokenizer.current_token} </symbol>\n"
+        )
+        self._tokenizer.advance()
 
     def compile_subroutine_body(self):
         self._output_buffer.write(self._indent * self._tab_width)
@@ -319,11 +300,12 @@ class CompilationEngine:
         self._output_buffer.write(f"</subroutineBody>\n")
 
     def compile_var_dec(self):
-        self._output_buffer.write(self._indent * self._tab_width)
-        self._output_buffer.write(f"<varDec>\n")
-        self._indent += 1
 
         if self._tokenizer.current_token == "var":
+            self._output_buffer.write(self._indent * self._tab_width)
+            self._output_buffer.write(f"<varDec>\n")
+            self._indent += 1
+
             # var
             self._output_buffer.write(self._indent * self._tab_width)
             self._output_buffer.write(
@@ -376,9 +358,9 @@ class CompilationEngine:
                 )
                 self._tokenizer.advance()
 
-        self._indent -= 1
-        self._output_buffer.write(self._indent * self._tab_width)
-        self._output_buffer.write(f"</varDec>\n")
+            self._indent -= 1
+            self._output_buffer.write(self._indent * self._tab_width)
+            self._output_buffer.write(f"</varDec>\n")
 
     def compile_statements(self):
         self._output_buffer.write(self._indent * self._tab_width)
@@ -397,11 +379,6 @@ class CompilationEngine:
                     self.compile_do()
                 elif self._tokenizer.current_token == "return":
                     self.compile_return()
-                # else:
-                #     # handle empty else condition
-                #     # }
-                #     self._output_buffer.write(f"<symbol> {self._tokenizer.current_token} <\symbol>\n")
-                #     self._tokenizer.advance()
 
         self._indent -= 1
         self._output_buffer.write(self._indent * self._tab_width)
@@ -593,19 +570,9 @@ class CompilationEngine:
         self._tokenizer.advance()
 
         # subroutine call
-        # subroutine name
-        self._output_buffer.write(self._indent * self._tab_width)
-        self._output_buffer.write(
-            f"<identifier> {self._tokenizer.current_token} </identifier>\n"
-        )
-        self._tokenizer.advance()
-
-        # .
-        self._output_buffer.write(self._indent * self._tab_width)
-        self._output_buffer.write(
-            f"<symbol> {self._tokenizer.current_token} </symbol>\n"
-        )
-        self._tokenizer.advance()
+        # check next token to determine format or subroutine call
+        # method() or object.method()
+        next_token, _ = self._tokenizer.peek()
 
         # subroutine name
         self._output_buffer.write(self._indent * self._tab_width)
@@ -613,6 +580,21 @@ class CompilationEngine:
             f"<identifier> {self._tokenizer.current_token} </identifier>\n"
         )
         self._tokenizer.advance()
+
+        if next_token == ".":
+            # .
+            self._output_buffer.write(self._indent * self._tab_width)
+            self._output_buffer.write(
+                f"<symbol> {self._tokenizer.current_token} </symbol>\n"
+            )
+            self._tokenizer.advance()
+
+            # subroutine name
+            self._output_buffer.write(self._indent * self._tab_width)
+            self._output_buffer.write(
+                f"<identifier> {self._tokenizer.current_token} </identifier>\n"
+            )
+            self._tokenizer.advance()
 
         # (
         self._output_buffer.write(self._indent * self._tab_width)
@@ -620,6 +602,7 @@ class CompilationEngine:
             f"<symbol> {self._tokenizer.current_token} </symbol>\n"
         )
         self._tokenizer.advance()
+
         self.compile_expression_list()
 
         # )
@@ -654,12 +637,15 @@ class CompilationEngine:
 
         if self._tokenizer.current_token != ";":
             while self._tokenizer.current_token != ";":
-                # var name
-                self._output_buffer.write(self._indent * self._tab_width)
-                self._output_buffer.write(
-                    f"<identifier> {self._tokenizer.current_token} </identifier>\n"
-                )
-                self._tokenizer.advance()
+                # expression
+                self.compile_expression()
+
+            # ;
+            self._output_buffer.write(self._indent * self._tab_width)
+            self._output_buffer.write(
+                f"<symbol> {self._tokenizer.current_token} </symbol>\n"
+            )
+            self._tokenizer.advance()
         else:
             # ;
             self._output_buffer.write(self._indent * self._tab_width)
@@ -688,6 +674,7 @@ class CompilationEngine:
         self._output_buffer.write(f"<term>\n")
         self._indent += 1
 
+        # breakpoint()
         if self._tokenizer.current_token == "(":
             pass
         # check is constant
@@ -697,6 +684,7 @@ class CompilationEngine:
                 JackTokenizer.INTEGER_CONSTANT,
                 JackTokenizer.STRING_CONST,
                 JackTokenizer.IDENTIFIER,
+                JackTokenizer.KEYWORD,
             ]
             or self._tokenizer.current_token in OP_LIST
         ):
@@ -738,13 +726,22 @@ class CompilationEngine:
     def compile_expression_list(self):
         self._output_buffer.write(self._indent * self._tab_width)
         self._output_buffer.write(f"<expressionList>\n")
+        self._indent += 1
 
         if self._tokenizer.current_token != ")":
             self.compile_expression()
 
             while self._tokenizer.current_token == ",":
+                # ,
+                self._output_buffer.write(self._indent * self._tab_width)
+                self._output_buffer.write(
+                    f"<symbol> {self._tokenizer.current_token} </symbol>\n"
+                )
+                self._tokenizer.advance()
+
                 self.compile_expression()
 
+        self._indent -= 1
         self._output_buffer.write(self._indent * self._tab_width)
         self._output_buffer.write(f"</expressionList>\n")
 
