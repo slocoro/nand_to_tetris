@@ -5,7 +5,9 @@ import re
 # when the regex expression matches the string
 # matches any number of whitespace characters after the group
 # to advance to the start of the next token
-STRING_CONSTANT_PATTERN = re.compile(r'^\s*"(.*)"\s*')
+
+# match lazily using ? to avoid matching " of next string in code
+STRING_CONSTANT_PATTERN = re.compile(r'^\s*"(.*?)"\s*')
 INTEGER_CONSTANT_PATTERN = re.compile(r"^\s*([0-9]+)\s*")
 KEYWORD_PATTERN = re.compile(
     r"^\s*(class|constructor|function|method|static|field"
