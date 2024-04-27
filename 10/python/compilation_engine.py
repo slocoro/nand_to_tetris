@@ -14,6 +14,8 @@ OP_LIST = [
     "=",
 ]
 
+UNARY_OP_LIST = ["-", "~"]
+
 
 class CompilationError(Exception):
     pass
@@ -33,7 +35,7 @@ class CompilationEngine:
         self._indent = 0
         self._tab_width = " " * 2
         self._stating_token = starting_token
-        self._output_path = Path("../ExpressionLessSquare/SquareGame-2.xml")
+        self._output_path = Path("../ArrayTest/Main-2.xml")
 
     def write_output(self):
         with self._output_path.open("w") as f:
@@ -131,7 +133,6 @@ class CompilationEngine:
                 self._tokenizer.advance()
 
             # ,
-            # breakpoint()
             if self._tokenizer.current_token == ",":
                 while self._tokenizer.current_token != ";":
                     self._output_buffer.write(self._indent * self._tab_width)
@@ -403,6 +404,23 @@ class CompilationEngine:
             f"<identifier> {self._tokenizer.current_token} </identifier>\n"
         )
         self._tokenizer.advance()
+
+        if self._tokenizer.current_token == "[":
+            # [
+            self._output_buffer.write(self._indent * self._tab_width)
+            self._output_buffer.write(
+                f"<symbol> {self._tokenizer.current_token} </symbol>\n"
+            )
+            self._tokenizer.advance()
+
+            self.compile_expression()
+
+            # ]
+            self._output_buffer.write(self._indent * self._tab_width)
+            self._output_buffer.write(
+                f"<symbol> {self._tokenizer.current_token} </symbol>\n"
+            )
+            self._tokenizer.advance()
 
         # =
         self._output_buffer.write(self._indent * self._tab_width)
@@ -676,9 +694,9 @@ class CompilationEngine:
                 JackTokenizer.IDENTIFIER,
                 JackTokenizer.KEYWORD,
             ]
-            or self._tokenizer.current_token in OP_LIST
+            or self._tokenizer.current_token in UNARY_OP_LIST
         ):
-            if self._tokenizer.current_token in OP_LIST:
+            if self._tokenizer.current_token in UNARY_OP_LIST:
                 self._output_buffer.write(self._indent * self._tab_width)
                 self._output_buffer.write(
                     f"<{self._tokenizer.token_type}> {self._tokenizer.current_token} </{self._tokenizer.token_type}>\n"
@@ -686,13 +704,41 @@ class CompilationEngine:
                 self._tokenizer.advance()
 
             self._output_buffer.write(self._indent * self._tab_width)
-            self._output_buffer.write(
-                f"<{self._tokenizer.token_type}> {self._tokenizer.current_token} </{self._tokenizer.token_type}>\n"
-            )
+            if self._tokenizer.token_type in JackTokenizer.STRING_CONST:
+                self._output_buffer.write(
+                    f"<stringConstant> {self._tokenizer.current_token} </stringConstant>\n"
+                )
+            elif self._tokenizer.token_type in JackTokenizer.INTEGER_CONSTANT:
+                self._output_buffer.write(
+                    f"<integerConstant> {self._tokenizer.current_token} </integerConstant>\n"
+                )
+            else:
+                self._output_buffer.write(
+                    f"<{self._tokenizer.token_type}> {self._tokenizer.current_token} </{self._tokenizer.token_type}>\n"
+                )
             self._tokenizer.advance()
 
-            next_token, next_type = self._tokenizer.peek()
-            if next_token == "[":
+            if self._tokenizer.current_token not in ["[", "(", "."]:
+                self._indent -= 1
+                self._output_buffer.write(self._indent * self._tab_width)
+                self._output_buffer.write(f"</term>\n")
+
+            if self._tokenizer.current_token in OP_LIST:
+                # op (operator)
+                self._output_buffer.write(self._indent * self._tab_width)
+                current_token = self._tokenizer.current_token
+                mapping = {"<": "&lt;", ">": "&lg;", "&": "&amp;", '"': "&quot;"}
+
+                if self._tokenizer.current_token in mapping:
+                    current_token = mapping[self._tokenizer.current_token]
+                self._output_buffer.write(
+                    f"<{self._tokenizer.token_type}> {current_token} </{self._tokenizer.token_type}>\n"
+                )
+                self._tokenizer.advance()
+
+                self.compile_term()
+
+            if self._tokenizer.current_token == "[":
                 # [
                 self._output_buffer.write(self._indent * self._tab_width)
                 self._output_buffer.write(
@@ -709,9 +755,67 @@ class CompilationEngine:
                 )
                 self._tokenizer.advance()
 
-        self._indent -= 1
-        self._output_buffer.write(self._indent * self._tab_width)
-        self._output_buffer.write(f"</term>\n")
+                self._indent -= 1
+                self._output_buffer.write(self._indent * self._tab_width)
+                self._output_buffer.write(f"</term>\n")
+
+            if self._tokenizer.current_token == "(":
+                # "("
+                self._output_buffer.write(self._indent * self._tab_width)
+                self._output_buffer.write(
+                    f"<symbol> {self._tokenizer.current_token} </symbol>\n"
+                )
+                self._tokenizer.advance()
+
+                self.compile_expression_list()
+
+                # ")"
+                self._output_buffer.write(self._indent * self._tab_width)
+                self._output_buffer.write(
+                    f"<symbol> {self._tokenizer.current_token} </symbol>\n"
+                )
+                self._tokenizer.advance()
+
+                self._indent -= 1
+                self._output_buffer.write(self._indent * self._tab_width)
+                self._output_buffer.write(f"</term>\n")
+
+            # subroutine call
+            elif self._tokenizer.current_token == ".":
+                # breakpoint()
+                # "."
+                self._output_buffer.write(self._indent * self._tab_width)
+                self._output_buffer.write(
+                    f"<symbol> {self._tokenizer.current_token} </symbol>\n"
+                )
+                self._tokenizer.advance()
+
+                # subroutine name (identifier)
+                self._output_buffer.write(self._indent * self._tab_width)
+                self._output_buffer.write(
+                    f"<identifier> {self._tokenizer.current_token} </identifier>\n"
+                )
+                self._tokenizer.advance()
+
+                # "("
+                self._output_buffer.write(self._indent * self._tab_width)
+                self._output_buffer.write(
+                    f"<symbol> {self._tokenizer.current_token} </symbol>\n"
+                )
+                self._tokenizer.advance()
+
+                self.compile_expression_list()
+
+                # ")"
+                self._output_buffer.write(self._indent * self._tab_width)
+                self._output_buffer.write(
+                    f"<symbol> {self._tokenizer.current_token} </symbol>\n"
+                )
+                self._tokenizer.advance()
+
+                self._indent -= 1
+                self._output_buffer.write(self._indent * self._tab_width)
+                self._output_buffer.write(f"</term>\n")
 
     def compile_expression_list(self):
         self._output_buffer.write(self._indent * self._tab_width)
@@ -737,7 +841,7 @@ class CompilationEngine:
 
 
 if __name__ == "__main__":
-    file_path = "../ExpressionLessSquare/SquareGame.jack"
+    file_path = "../ArrayTest/Main.jack"
     jack_tokenizer = JackTokenizer(file_path)
 
     compilation_engine = CompilationEngine(
