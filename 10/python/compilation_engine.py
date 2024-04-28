@@ -24,22 +24,27 @@ class CompilationError(Exception):
 class CompilationEngine:
     def __init__(
         self,
-        input_path,
+        input_path: str,
         tokenizer: JackTokenizer,
-        output_buffer=StringIO(),
-        starting_token="tokens",
+        output_buffer: StringIO = StringIO(),
+        starting_token: str = "tokens",
+        output_suffix: str = "",
     ):
-        self._input_path = input_path
+        self._input_path = Path(input_path)
         self._tokenizer = tokenizer
         self._output_buffer = output_buffer
         self._indent = 0
         self._tab_width = " " * 2
         self._stating_token = starting_token
-        self._output_path = Path("../Square/SquareGame-2.xml")
+        self._output_suffix = output_suffix
+        self._output_path = self._create_output_path()
 
     def write_output(self):
         with self._output_path.open("w") as f:
             print(self._output_buffer.getvalue(), file=f)
+
+    def _create_output_path(self):
+        return self._input_path.parent / f"{self._input_path.name.split('.')[0]}{self._output_suffix}.xml"
 
     def compile_class(self):
         self._output_buffer.write(f"<{self._stating_token}>\n")
@@ -928,7 +933,8 @@ if __name__ == "__main__":
     jack_tokenizer = JackTokenizer(file_path)
 
     compilation_engine = CompilationEngine(
-        input_path=file_path, tokenizer=jack_tokenizer, starting_token="class"
+        input_path=file_path, tokenizer=jack_tokenizer, starting_token="class", output_suffix="-2"
     )
+
     compilation_engine.compile_class()
     compilation_engine.write_output()
