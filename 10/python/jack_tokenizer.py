@@ -28,7 +28,7 @@ class JackTokenizer:
     STRING_CONST = "string_constant"
     IDENTIFIER = "identifier"
 
-    def __init__(self, file_path: str):
+    def __init__(self, file_path: Path):
         self.file_path = file_path
         self._read_and_tokenize_input()
 
@@ -116,7 +116,7 @@ class JackTokenizer:
         self._content = self._content[match.end() :]
 
     def _read_and_tokenize_input(self):
-        self._content = Path(self.file_path).open("r").read()
+        self._content = self.file_path.open("r").read()
         self._content = self._content.split("\n")
         self._remove_comments()
 
@@ -128,7 +128,9 @@ class JackTokenizer:
                 l.split("//")[0].strip()
                 for l in self._content
                 # NOTE: this might not cover all cases
-                if not l.strip().startswith("/") and not l.strip().startswith("*") and l != ""
+                if not l.strip().startswith("/")
+                and not l.strip().startswith("*")
+                and l != ""
             ]
         )
 
