@@ -35,7 +35,7 @@ class CompilationEngine:
         self._indent = 0
         self._tab_width = " " * 2
         self._stating_token = starting_token
-        self._output_path = Path("../Square/Main-2.xml")
+        self._output_path = Path("../Square/SquareGame-2.xml")
 
     def write_output(self):
         with self._output_path.open("w") as f:
@@ -763,19 +763,25 @@ class CompilationEngine:
             self._output_buffer.write(f"<term>\n")
             self._indent += 1
 
-            # breakpoint()
             # maybe not needed
             next_token, _ = self._tokenizer.peek()
             if (
                 self._tokenizer.current_token in UNARY_OP_LIST
                 and next_token != JackTokenizer.INTEGER_CONSTANT
             ):
-                breakpoint()
                 self._output_buffer.write(self._indent * self._tab_width)
                 self._output_buffer.write(
                     f"<{self._tokenizer.token_type}> {self._tokenizer.current_token} </{self._tokenizer.token_type}>\n"
                 )
                 self._tokenizer.advance()
+
+                self.compile_term()
+
+                self._indent -= 1
+                self._output_buffer.write(self._indent * self._tab_width)
+                self._output_buffer.write(f"</term>\n")
+
+                return
 
             self._output_buffer.write(self._indent * self._tab_width)
 
@@ -918,7 +924,7 @@ class CompilationEngine:
 
 
 if __name__ == "__main__":
-    file_path = "../Square/Main.jack"
+    file_path = "../Square/SquareGame.jack"
     jack_tokenizer = JackTokenizer(file_path)
 
     compilation_engine = CompilationEngine(
