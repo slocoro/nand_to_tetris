@@ -125,7 +125,7 @@ class JackTokenizer:
             [
                 l.split("//")[0].strip()
                 for l in self._content
-                if not l.startswith("/") and l != ""
+                if not l.strip().startswith("/") and l != ""
             ]
         )
 
