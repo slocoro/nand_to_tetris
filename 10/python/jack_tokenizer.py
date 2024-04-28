@@ -118,7 +118,6 @@ class JackTokenizer:
     def _read_and_tokenize_input(self):
         self._content = Path(self.file_path).open("r").read()
         self._content = self._content.split("\n")
-
         self._remove_comments()
 
     def _remove_comments(self):
@@ -128,7 +127,8 @@ class JackTokenizer:
             [
                 l.split("//")[0].strip()
                 for l in self._content
-                if not l.strip().startswith("/") and l != ""
+                # NOTE: this might not cover all cases
+                if not l.strip().startswith("/") and not l.strip().startswith("*") and l != ""
             ]
         )
 
