@@ -33,6 +33,7 @@ class JackTokenizer:
         self._read_and_tokenize_input()
 
         self.current_token = None
+        self.previous_token = None
         self.token_type = None
 
     def advance(self):
@@ -109,6 +110,8 @@ class JackTokenizer:
             return False
 
     def _update_token(self, match) -> None:
+        if self.current_token:
+            self.previous_token = self.current_token
         self.current_token = match.group(1)
         self._content = self._content[match.end() :]
 
