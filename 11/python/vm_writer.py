@@ -12,6 +12,8 @@ class VMWriter:
         "|": "or",
         "*": "call Math.multiply 2",
         "/": "call Math.divide 2",
+        "-": "neg",
+        "~": "not",
     }
     UNARY_OPS = {"-": "neg", "~": "not"}
 

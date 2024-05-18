@@ -21,9 +21,16 @@ UNARY_OP_LIST = ["-", "~"]
 SEGMENT_MAP = {
     "static": "static",
     "field": "this",
-    "argument": "argument",
+    "arg": "argument",
     "var": "local",
 }
+
+WHILE_START = "WHILE_START_"
+WHILE_END = "WHILE_END_"
+
+IF_TRUE = "IF_TRUE_"
+IF_FALSE = "IF_FALSE_"
+IF_END = "IF_END_"
 
 
 class CompilationError(Exception):
@@ -46,6 +53,8 @@ class CompilationEngine:
         self._output_path = self._create_output_path()
         self._class_name = ""
         self._subroutine_name = ""
+        self._while_count = 0
+        self._if_count = 0
 
     def write_output(self):
         with self._output_path.open("w") as f:
@@ -80,8 +89,6 @@ class CompilationEngine:
         # breakpoint()
 
         self.compile_subroutine_dec()
-
-        self.write_output()
 
     def compile_class_var_dec(self):
         """
@@ -154,7 +161,13 @@ class CompilationEngine:
             self._output_buffer.write(code)
 
             # compile statements
-            if self._tokenizer.current_token in ["let", "if", "while", "do", "return"]:
+            while self._tokenizer.current_token in [
+                "let",
+                "if",
+                "while",
+                "do",
+                "return",
+            ]:
                 # breakpoint()
                 self.compile_statements()
 
@@ -224,191 +237,130 @@ class CompilationEngine:
 
     def compile_statements(self):
         # breakpoint()
-        if self._tokenizer.current_token == "do":
+        current_token = self._tokenizer.current_token
+        if current_token == "do":
             self.compile_do()
-        if self._tokenizer.current_token == "return":
+        if current_token == "let":
+            self.compile_let()
+        if current_token == "while":
+            self.compile_while()
+        if current_token == "if":
+            self.compile_if()
+        if current_token == "return":
             # breakpoint()
             self.compile_return()
 
     def compile_let(self):
-        self._output_buffer.write(self._indent * self._tab_width)
-        self._output_buffer.write(f"<letStatement>\n")
-        self._indent += 1
+        is_array = False
+        # breakpoint()
+        self.validate_and_advance("let")
+        var_name = self._tokenizer.current_token
+        kind = self._symbol_table.kind_of(var_name)
+        index = self._symbol_table.index_of(var_name)
+        self.validate_and_advance(var_name)
 
-        # let
-        self._output_buffer.write(self._indent * self._tab_width)
-        self._output_buffer.write(
-            f"<keyword> {self._tokenizer.current_token} </keyword>\n"
-        )
-        self._tokenizer.advance()
-
-        # var name
-        self._output_buffer.write(self._indent * self._tab_width)
-        self._output_buffer.write(
-            f"<identifier> {self._tokenizer.current_token} </identifier>\n"
-        )
-        self._tokenizer.advance()
-
+        # handle if array
         if self._tokenizer.current_token == "[":
-            # [
-            self._output_buffer.write(self._indent * self._tab_width)
-            self._output_buffer.write(
-                f"<symbol> {self._tokenizer.current_token} </symbol>\n"
-            )
-            self._tokenizer.advance()
-
+            is_array = True
+            self.validate_and_advance("[")
             self.compile_expression()
+            self.validate_and_advance("]")
 
-            # ]
-            self._output_buffer.write(self._indent * self._tab_width)
-            self._output_buffer.write(
-                f"<symbol> {self._tokenizer.current_token} </symbol>\n"
-            )
-            self._tokenizer.advance()
+            code = self._vm_writer.write_push(SEGMENT_MAP[kind], index)
+            code += self._vm_writer.write_arithmetic("+")
+            self._output_buffer.write(code)
 
-        # =
-        self._output_buffer.write(self._indent * self._tab_width)
-        self._output_buffer.write(
-            f"<symbol> {self._tokenizer.current_token} </symbol>\n"
-        )
-        self._tokenizer.advance()
-
-        # expression
+        self.validate_and_advance("=")
         self.compile_expression()
+        self.validate_and_advance(";")
 
-        # ;
-        self._output_buffer.write(self._indent * self._tab_width)
-        self._output_buffer.write(
-            f"<symbol> {self._tokenizer.current_token} </symbol>\n"
-        )
-        self._tokenizer.advance()
+        if is_array:
+            code = self._vm_writer.write_pop("temp", 0)
+            code += self._vm_writer.write_pop("pointer", 1)
+            code += self._vm_writer.write_push("temp", 0)
+            code += self._vm_writer.write_pop("that", 0)
+        else:
+            code = self._vm_writer.write_pop(SEGMENT_MAP[kind], index)
 
-        self._indent -= 1
-        self._output_buffer.write(self._indent * self._tab_width)
-        self._output_buffer.write(f"</letStatement>\n")
+        self._output_buffer.write(code)
 
     def compile_if(self):
-        self._output_buffer.write(self._indent * self._tab_width)
-        self._output_buffer.write(f"<ifStatement>\n")
-        self._indent += 1
 
-        # if
-        self._output_buffer.write(self._indent * self._tab_width)
-        self._output_buffer.write(
-            f"<keyword> {self._tokenizer.current_token} </keyword>\n"
-        )
-        self._tokenizer.advance()
+        if_count = str(self._if_count)
+        self._if_count += 1
 
-        # (
-        self._output_buffer.write(self._indent * self._tab_width)
-        self._output_buffer.write(
-            f"<symbol> {self._tokenizer.current_token} </symbol>\n"
-        )
-        self._tokenizer.advance()
-
-        # expression
+        self.validate_and_advance("if")
+        self.validate_and_advance("(")
         self.compile_expression()
+        self.validate_and_advance(")")
 
-        # )
-        self._output_buffer.write(self._indent * self._tab_width)
-        self._output_buffer.write(
-            f"<symbol> {self._tokenizer.current_token} </symbol>\n"
-        )
-        self._tokenizer.advance()
+        code = self._vm_writer.write_if_goto(IF_TRUE + if_count)
+        code += self._vm_writer.write_goto(IF_FALSE + if_count)
+        code += self._vm_writer.write_label(IF_TRUE + if_count)
+        self._output_buffer.write(code)
 
-        # {
-        self._output_buffer.write(self._indent * self._tab_width)
-        self._output_buffer.write(
-            f"<symbol> {self._tokenizer.current_token} </symbol>\n"
-        )
-        self._tokenizer.advance()
-
-        # statements
-        self.compile_statements()
-
-        # }
-        self._output_buffer.write(self._indent * self._tab_width)
-        self._output_buffer.write(
-            f"<symbol> {self._tokenizer.current_token} </symbol>\n"
-        )
-        self._tokenizer.advance()
+        self.validate_and_advance("{")
+        # compile statements
+        while self._tokenizer.current_token in [
+            "let",
+            "if",
+            "while",
+            "do",
+            "return",
+        ]:
+            self.compile_statements()
+        self.validate_and_advance("}")
 
         if self._tokenizer.current_token == "else":
-            # else
-            self._output_buffer.write(self._indent * self._tab_width)
-            self._output_buffer.write(
-                f"<keyword> {self._tokenizer.current_token} </keyword>\n"
-            )
-            self._tokenizer.advance()
+            code = self._vm_writer.write_goto(IF_END + if_count)
+            code += self._vm_writer.write_label(IF_FALSE + if_count)
+            self._output_buffer.write(code)
 
-            # {
-            self._output_buffer.write(self._indent * self._tab_width)
-            self._output_buffer.write(
-                f"<symbol> {self._tokenizer.current_token} </symbol>\n"
-            )
-            self._tokenizer.advance()
-
+            self.validate_and_advance("else")
+            self.validate_and_advance("{")
             self.compile_statements()
+            self.validate_and_advance("}")
 
-            # }
-            self._output_buffer.write(self._indent * self._tab_width)
-            self._output_buffer.write(
-                f"<symbol> {self._tokenizer.current_token} </symbol>\n"
-            )
-            self._tokenizer.advance()
+            code = self._vm_writer.write_label(IF_END + if_count)
+            self._output_buffer.write(code)
 
-        self._indent -= 1
-        self._output_buffer.write(self._indent * self._tab_width)
-        self._output_buffer.write(f"</ifStatement>\n")
+        else:
+            code = self._vm_writer.write_label(IF_FALSE + if_count)
+            self._output_buffer.write(code)
 
     def compile_while(self):
-        self._output_buffer.write(self._indent * self._tab_width)
-        self._output_buffer.write(f"<whileStatement>\n")
-        self._indent += 1
+        breakpoint()
+        while_count = str(self._while_count)
+        self._while_count += 1
 
-        # while
-        self._output_buffer.write(self._indent * self._tab_width)
-        self._output_buffer.write(
-            f"<keyword> {self._tokenizer.current_token} </keyword>\n"
-        )
-        self._tokenizer.advance()
+        code = self._vm_writer.write_label(WHILE_START + while_count)
+        self._output_buffer.write(code)
 
-        # (
-        self._output_buffer.write(self._indent * self._tab_width)
-        self._output_buffer.write(
-            f"<symbol> {self._tokenizer.current_token} </symbol>\n"
-        )
-        self._tokenizer.advance()
-
-        # expression
+        self.validate_and_advance("while")
+        self.validate_and_advance("(")
         self.compile_expression()
+        self.validate_and_advance(")")
 
-        # )
-        self._output_buffer.write(self._indent * self._tab_width)
-        self._output_buffer.write(
-            f"<symbol> {self._tokenizer.current_token} </symbol>\n"
-        )
-        self._tokenizer.advance()
+        code = self._vm_writer.write_arithmetic("~")
+        code += self._vm_writer.write_if_goto(WHILE_END + while_count)
+        self._output_buffer.write(code)
 
-        # {
-        self._output_buffer.write(self._indent * self._tab_width)
-        self._output_buffer.write(
-            f"<symbol> {self._tokenizer.current_token} </symbol>\n"
-        )
-        self._tokenizer.advance()
+        self.validate_and_advance("{")
+        # compile statements
+        while self._tokenizer.current_token in [
+            "let",
+            "if",
+            "while",
+            "do",
+            "return",
+        ]:
+            self.compile_statements()
+        self.validate_and_advance("}")
 
-        self.compile_statements()
+        code = self._vm_writer.write_goto(WHILE_START + while_count)
+        code += self._vm_writer.write_label(WHILE_END + while_count)
 
-        # }
-        self._output_buffer.write(self._indent * self._tab_width)
-        self._output_buffer.write(
-            f"<symbol> {self._tokenizer.current_token} </symbol>\n"
-        )
-        self._tokenizer.advance()
-
-        self._indent -= 1
-        self._output_buffer.write(self._indent * self._tab_width)
-        self._output_buffer.write(f"</whileStatement>\n")
+        self._output_buffer.write(code)
 
     def compile_do(self):
         """
@@ -508,8 +460,9 @@ class CompilationEngine:
             self._output_buffer.write(code)
 
         else:
+            # subroutinecall -> subroutinename '(' ... | (class_name|var_name) '.' ...
             if self._tokenizer.peek()[0] in ["(", "."]:
-                pass
+                self.compile_subroutine_call()
 
             elif self._tokenizer.peek()[0] == "[":
                 # name of array
@@ -536,7 +489,7 @@ class CompilationEngine:
                 if token_type == "identifier":
                     kind = self._symbol_table.kind_of(name)
                     index = self._symbol_table.index_of(name)
-                    code = self._vm_writer.write_push(kind, index)
+                    code = self._vm_writer.write_push(SEGMENT_MAP[kind], index)
 
                 elif token_type == "integer_constant":
                     code = self._vm_writer.write_push("constant", int(name))
@@ -572,8 +525,9 @@ class CompilationEngine:
 
 
 if __name__ == "__main__":
-    file_path = Path("../Seven/Main.jack")
+    # file_path = Path("../Seven/Main.jack")
     # file_path = Path("../Square/SquareGame.jack")
+    file_path = Path("../ConvertToBin/Main.jack")
     jack_tokenizer = JackTokenizer(file_path)
     symbol_table = SymbolTable()
     vm_writer = VMWriter()
