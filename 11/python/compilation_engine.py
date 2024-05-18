@@ -126,16 +126,23 @@ class CompilationEngine:
         example: function/method void dispose() { ... }
         """
         # breakpoint()
+        is_method = False
+        is_constructor = False
+
         # check if there are any methods to compile
         if self._tokenizer.current_token not in ["constructor", "function", "method"]:
             return
 
         while self._tokenizer.current_token in ["constructor", "function", "method"]:
 
-            self._symbol_table.start_subroutine()
-
             if self._tokenizer.current_token == "method":
-                self._symbol_table.define("this", self._class_name, Kind.ARG)
+                is_method = True
+                self._symbol_table.define("this", self._class_name, "argument")
+
+            if self._tokenizer.current_token == "constructor":
+                is_constructor = True
+
+            self._symbol_table.start_subroutine()
 
             # advance to return type
             self.validate_and_advance(["function", "constructor", "method"])
@@ -158,6 +165,17 @@ class CompilationEngine:
             code = self._vm_writer.write_function(
                 self._class_name, self._subroutine_name, num_vars
             )
+
+            if is_method:
+                code += self._vm_writer.write_push("argument", 0)
+                code += self._vm_writer.write_pop("pointer", 0)
+
+            elif is_constructor:
+                num_args = self._symbol_table.var_count("field")
+                code += self._vm_writer.write_push("constant", num_args)
+                code += self._vm_writer.write_call("Memory", "alloc", 1)
+                code += self._vm_writer.write_pop("pointer", 0)
+
             self._output_buffer.write(code)
 
             # compile statements
@@ -508,11 +526,20 @@ class CompilationEngine:
 
     def compile_expression_list(self) -> int:
         num_args = 0
-        # breakpoint()
+        breakpoint()
         if self._tokenizer.token_type in [
             "integer_constant",
+            "string_constant",
             "identifier",
-        ] or self._tokenizer.current_token in ["("]:
+        ] or self._tokenizer.current_token in [
+            "true",
+            "false",
+            "null",
+            "this",
+            "(",
+            "-",
+            "~",
+        ]:
             self.compile_expression()
             num_args += 1
 
@@ -527,7 +554,8 @@ class CompilationEngine:
 if __name__ == "__main__":
     # file_path = Path("../Seven/Main.jack")
     # file_path = Path("../Square/SquareGame.jack")
-    file_path = Path("../ConvertToBin/Main.jack")
+    # file_path = Path("../ConvertToBin/Main.jack")
+    file_path = Path("../Square/Square.jack")
     jack_tokenizer = JackTokenizer(file_path)
     symbol_table = SymbolTable()
     vm_writer = VMWriter()
@@ -540,4 +568,4 @@ if __name__ == "__main__":
     )
 
     compilation_engine.compile_class()
-    # compilation_engine.write_output()
+    compilation_engine.write_output()
