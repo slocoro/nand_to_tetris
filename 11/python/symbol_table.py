@@ -8,6 +8,13 @@ class Kind:
     VAR = "var"  # equivalent to local memory segment
 
 
+@dataclass
+class Symbol:
+    type: str
+    kind: str
+    index: int
+
+
 class SymbolTable:
     def __init__(self):
         self.class_symbols = {}
@@ -16,10 +23,12 @@ class SymbolTable:
 
     def define(self, name: str, type: str, kind: str):
         if kind in [Kind.FIELD, Kind.STATIC]:
-            self.class_symbols[name] = [type, kind, self.counts[kind]]
+            self.class_symbols[name] = Symbol(type, kind, self.counts[kind])
+            # self.class_symbols[name] = [type, kind, self.counts[kind]]
             self.counts[kind] += 1
         if kind in [Kind.ARG, Kind.VAR]:
-            self.subroutine_symbols[name] = [type, kind, self.counts[kind]]
+            self.subroutine_symbols[name] = Symbol(type, kind, self.counts[kind])
+            # self.subroutine_symbols[name] = [type, kind, self.counts[kind]]
             self.counts[kind] += 1
 
     def start_subroutine(self) -> None:
@@ -33,20 +42,29 @@ class SymbolTable:
     def kind_of(self, name: str) -> str | None:
         symbol = self._lookup(name)
         if symbol:
-            return symbol[1]
+            # return symbol[1]
+            return symbol.kind
 
     # e.g. int, char, boolean, class...
     def type_of(self, name: str) -> str | None:
         symbol = self._lookup(name)
         if symbol:
-            return symbol[0]
+            # return symbol[0]
+            return symbol.type
 
     def index_of(self, name: str) -> int | None:
         symbol = self._lookup(name)
         if symbol:
-            return symbol[2]
+            # return symbol[2]
+            return symbol.index
 
-    def _lookup(self, name: str) -> list | None:
+    def contains(self, name: str) -> bool:
+        if (name in self.subroutine_symbols) or (name in self.class_symbols):
+            return True
+        return False
+
+    # first lookup in subroutine scope, then in class scope
+    def _lookup(self, name: str) -> Symbol | None:
         if self.subroutine_symbols.get(name):
             return self.subroutine_symbols.get(name)
         elif self.class_symbols.get(name):

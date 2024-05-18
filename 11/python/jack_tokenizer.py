@@ -32,9 +32,9 @@ class JackTokenizer:
         self.file_path = file_path
         self._read_and_tokenize_input()
 
-        self.current_token = None
-        self.previous_token = None
-        self.token_type = None
+        self.current_token: str = ""
+        self.previous_token: str = ""
+        self.token_type: str = ""
 
     def advance(self):
         # match keyword
