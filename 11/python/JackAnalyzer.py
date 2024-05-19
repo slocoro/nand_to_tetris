@@ -1,5 +1,8 @@
 import compilation_engine as ce
 import jack_tokenizer as jt
+import symbol_table as st
+import vm_writer as vm
+
 import sys
 from pathlib import Path
 
@@ -15,11 +18,13 @@ def main():
 
     for file in files_to_process:
         jack_tokenizer = jt.JackTokenizer(file)
+        symbol_table = st.SymbolTable()
+        vm_writer = vm.VMWriter()
         compilation_engine = ce.CompilationEngine(
             input_path=file,
             tokenizer=jack_tokenizer,
-            starting_token="class",
-            output_suffix="",
+            symbol_table=symbol_table,
+            vm_writer=vm_writer,
         )
         compilation_engine.compile_class()
         compilation_engine.write_output()

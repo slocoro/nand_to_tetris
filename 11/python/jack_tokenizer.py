@@ -130,6 +130,7 @@ class JackTokenizer:
                 # NOTE: this might not cover all cases
                 if not l.strip().startswith("/")
                 and not l.strip().startswith("*")
+                and not l.strip().endswith("*/")
                 and l != ""
             ]
         )
