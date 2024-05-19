@@ -12,7 +12,7 @@ INTEGER_CONSTANT_PATTERN = re.compile(r"^\s*([0-9]+)\s*")
 KEYWORD_PATTERN = re.compile(
     r"^\s*(class|constructor|function|method|static|field"
     r"|var|int|char|boolean|void|true|false|null|this|"
-    r"let|do|if|else|while|return"
+    r"let|do\b|if|else|while|return"
     r")\s*"
 )
 SYMBOL_PATTERN = re.compile(r"^\s*([{}()\[\].,;+\-*/&|<>=~])\s*")

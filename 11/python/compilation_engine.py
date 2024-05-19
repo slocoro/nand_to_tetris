@@ -81,10 +81,8 @@ class CompilationEngine:
         self._class_name = self._tokenizer.current_token
         self._tokenizer.advance()
         self.validate_and_advance("{")
-        # breakpoint()
 
         self.compile_class_var_dec()
-        # breakpoint()
 
         self.compile_subroutine_dec()
 
@@ -98,7 +96,6 @@ class CompilationEngine:
         if self._tokenizer.current_token not in ["static", "field"]:
             return
 
-        # breakpoint()
         while self._tokenizer.current_token in ["static", "field"]:
             # kind, type, name
             # advance until after ;
@@ -179,7 +176,6 @@ class CompilationEngine:
                 "do",
                 "return",
             ]:
-                # breakpoint()
                 self.compile_statements()
 
             self.validate_and_advance("}")
@@ -207,20 +203,6 @@ class CompilationEngine:
             name = self._tokenizer.current_token
             self._symbol_table.define(name, type_, Kind.ARG)
             self._tokenizer.advance()
-
-    # this method was decomposed as it needs to write code after compile_var_dec()
-    # def compile_subroutine_body(self):
-    #     # breakpoint()
-    #     # no parameters to compile
-    #     if self._tokenizer.current_token == "}":
-    #         return
-
-    #     while self._tokenizer.current_token == "var":
-    #         self.compile_var_dec()
-
-    #     if self._tokenizer.current_token in ["let", "if", "while", "do", "return"]:
-    #         # breakpoint()
-    #         self.compile_statements()
 
     def compile_var_dec(self):
         """
@@ -408,6 +390,7 @@ class CompilationEngine:
         self._output_buffer.write(code)
 
     def compile_subroutine_call(self):
+        breakpoint()
         num_args = 0
         class_name = self._class_name
         function_name = self._tokenizer.current_token
@@ -430,8 +413,8 @@ class CompilationEngine:
         # local method
         else:
             num_args += 1
-            # code = self._vm_writer.write_pop("pointer", 0)
             # should this be a pop??
+            # code = self._vm_writer.write_pop("pointer", 0)
             code = self._vm_writer.write_push("pointer", 0)
             self._output_buffer.write(code)
 
@@ -489,7 +472,7 @@ class CompilationEngine:
                 # add
                 # pop pointer 1 (to align THAT 0 with RAM address whose value is at THAT)
                 # push that 0 (push value onto stack)
-                code = self._vm_writer.write_push(kind, index)
+                code = self._vm_writer.write_push(SEGMENT_MAP[kind], index)
                 code += self._vm_writer.write_arithmetic("+")
                 code += self._vm_writer.write_pop("pointer", 1)
                 code += self._vm_writer.write_push("that", 0)
@@ -553,7 +536,8 @@ if __name__ == "__main__":
     # file_path = Path("../ConvertToBin/Main.jack")
     # file_path = Path("../Square/Square.jack")
     # file_path = Path("../Average/Main.jack")
-    file_path = Path("../Pong/PongGame.jack")
+    # file_path = Path("../Pong/PongGame.jack")
+    file_path = Path("../ComplexArrays/Main.jack")
     jack_tokenizer = JackTokenizer(file_path)
     symbol_table = SymbolTable()
     vm_writer = VMWriter()
