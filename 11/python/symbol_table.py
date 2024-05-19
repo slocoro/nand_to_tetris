@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import Optional
 
 
 class Kind:
@@ -39,20 +40,20 @@ class SymbolTable:
     def var_count(self, kind: str) -> int:
         return self.counts[kind]
 
-    def kind_of(self, name: str) -> str | None:
+    def kind_of(self, name: str) -> Optional[str]:
         symbol = self._lookup(name)
         if symbol:
             # return symbol[1]
             return symbol.kind
 
     # e.g. int, char, boolean, class...
-    def type_of(self, name: str) -> str | None:
+    def type_of(self, name: str) -> Optional[str]:
         symbol = self._lookup(name)
         if symbol:
             # return symbol[0]
             return symbol.type
 
-    def index_of(self, name: str) -> int | None:
+    def index_of(self, name: str) -> Optional[str]:
         symbol = self._lookup(name)
         if symbol:
             # return symbol[2]
@@ -64,7 +65,7 @@ class SymbolTable:
         return False
 
     # first lookup in subroutine scope, then in class scope
-    def _lookup(self, name: str) -> Symbol | None:
+    def _lookup(self, name: str) -> Optional[Symbol]:
         if self.subroutine_symbols.get(name):
             return self.subroutine_symbols.get(name)
         elif self.class_symbols.get(name):

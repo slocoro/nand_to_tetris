@@ -3,6 +3,8 @@ from jack_tokenizer import JackTokenizer
 from symbol_table import SymbolTable, Kind
 from vm_writer import VMWriter
 from pathlib import Path
+from typing import Union, List
+
 
 OP_LIST = [
     "+",
@@ -63,7 +65,7 @@ class CompilationEngine:
     def _create_output_path(self):
         return self._input_path.parent / f"{self._input_path.name.split('.')[0]}.vm"
 
-    def validate_and_advance(self, tokens: str | list[str]):
+    def validate_and_advance(self, tokens: Union[str, List[str]]):
         """
         Advance and validate a token.
         """
@@ -325,7 +327,6 @@ class CompilationEngine:
             self._output_buffer.write(code)
 
     def compile_while(self):
-        # breakpoint()
         while_count = str(self._while_count)
         self._while_count += 1
 
@@ -390,7 +391,6 @@ class CompilationEngine:
         self._output_buffer.write(code)
 
     def compile_subroutine_call(self):
-        # breakpoint()
         num_args = 0
         class_name = self._class_name
         function_name = self._tokenizer.current_token
@@ -505,7 +505,6 @@ class CompilationEngine:
 
     def compile_expression_list(self) -> int:
         num_args = 0
-        # breakpoint()
         if self._tokenizer.token_type in [
             "integer_constant",
             "string_constant",
@@ -532,12 +531,6 @@ class CompilationEngine:
 
 if __name__ == "__main__":
     file_path = Path("../Seven/Main.jack")
-    # file_path = Path("../Square/SquareGame.jack")
-    # file_path = Path("../ConvertToBin/Main.jack")
-    # file_path = Path("../Square/Square.jack")
-    # file_path = Path("../Average/Main.jack")
-    # file_path = Path("../Pong/PongGame.jack")
-    # file_path = Path("../ComplexArrays/Main.jack")
     jack_tokenizer = JackTokenizer(file_path)
     symbol_table = SymbolTable()
     vm_writer = VMWriter()
