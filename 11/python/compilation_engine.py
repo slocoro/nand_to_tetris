@@ -122,14 +122,13 @@ class CompilationEngine:
         """
         example: function/method void dispose() { ... }
         """
-        is_method = False
-        is_constructor = False
-
         # check if there are any methods to compile
         if self._tokenizer.current_token not in ["constructor", "function", "method"]:
             return
 
         while self._tokenizer.current_token in ["constructor", "function", "method"]:
+            is_method = False
+            is_constructor = False
 
             if self._tokenizer.current_token == "method":
                 is_method = True
@@ -152,8 +151,6 @@ class CompilationEngine:
 
             # START COMPILING SUBROUTINE
             self.validate_and_advance("{")
-            # breakpoint()
-
             # compile number of local vars
             while self._tokenizer.current_token == "var":
                 self.compile_var_dec()
@@ -247,7 +244,6 @@ class CompilationEngine:
         self.validate_and_advance(";")
 
     def compile_statements(self):
-        # breakpoint()
         current_token = self._tokenizer.current_token
         if current_token == "do":
             self.compile_do()
@@ -328,7 +324,15 @@ class CompilationEngine:
 
             self.validate_and_advance("else")
             self.validate_and_advance("{")
-            self.compile_statements()
+            # compile statements
+            while self._tokenizer.current_token in [
+                "let",
+                "if",
+                "while",
+                "do",
+                "return",
+            ]:
+                self.compile_statements()
             self.validate_and_advance("}")
 
             code = self._vm_writer.write_label(IF_END + if_count)
@@ -380,7 +384,6 @@ class CompilationEngine:
                         '.' subroutineName '('expressionList ')'
         """
         self.validate_and_advance("do")
-        # breakpoint()
 
         self.compile_subroutine_call()
 
@@ -427,8 +430,9 @@ class CompilationEngine:
         # local method
         else:
             num_args += 1
-            code = self._vm_writer.write_push("argument", 0)
-            code += self._vm_writer.write_pop("pointer", 0)
+            # code = self._vm_writer.write_pop("pointer", 0)
+            # should this be a pop??
+            code = self._vm_writer.write_push("pointer", 0)
             self._output_buffer.write(code)
 
         self.validate_and_advance("(")
@@ -548,7 +552,8 @@ if __name__ == "__main__":
     # file_path = Path("../Square/SquareGame.jack")
     # file_path = Path("../ConvertToBin/Main.jack")
     # file_path = Path("../Square/Square.jack")
-    file_path = Path("../Average/Main.jack")
+    # file_path = Path("../Average/Main.jack")
+    file_path = Path("../Pong/PongGame.jack")
     jack_tokenizer = JackTokenizer(file_path)
     symbol_table = SymbolTable()
     vm_writer = VMWriter()
