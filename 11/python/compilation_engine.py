@@ -83,8 +83,6 @@ class CompilationEngine:
         self.validate_and_advance("{")
         # breakpoint()
 
-        # while self._tokenizer.has_more_tokens():
-
         self.compile_class_var_dec()
         # breakpoint()
 
@@ -113,7 +111,6 @@ class CompilationEngine:
             self._symbol_table.define(name, type_, kind)
 
             while self._tokenizer.current_token == ",":
-                # breakpoint()
                 self._tokenizer.advance()
                 name = self._tokenizer.current_token
                 self._symbol_table.define(name, type_, kind)
@@ -125,7 +122,6 @@ class CompilationEngine:
         """
         example: function/method void dispose() { ... }
         """
-        # breakpoint()
         is_method = False
         is_constructor = False
 
@@ -234,10 +230,8 @@ class CompilationEngine:
         Compiles var declaration.
         'var' type varName (',' varName)* ';'
         """
-        # breakpoint()
-
         self.validate_and_advance("var")
-        # breakpoint()
+
         type_ = self._tokenizer.current_token
         self._tokenizer.advance()
         name = self._tokenizer.current_token
@@ -251,7 +245,6 @@ class CompilationEngine:
             self._tokenizer.advance()
 
         self.validate_and_advance(";")
-        # breakpoint()
 
     def compile_statements(self):
         # breakpoint()
@@ -265,19 +258,18 @@ class CompilationEngine:
         if current_token == "if":
             self.compile_if()
         if current_token == "return":
-            # breakpoint()
             self.compile_return()
 
     def compile_let(self):
         is_array = False
-        # breakpoint()
+
         self.validate_and_advance("let")
         var_name = self._tokenizer.current_token
         kind = self._symbol_table.kind_of(var_name)
         index = self._symbol_table.index_of(var_name)
         self.validate_and_advance(var_name)
 
-        # handle if array
+        # handle array
         if self._tokenizer.current_token == "[":
             is_array = True
             self.validate_and_advance("[")
@@ -418,11 +410,8 @@ class CompilationEngine:
         function_name = self._tokenizer.current_token
 
         self._tokenizer.advance()
-        # breakpoint()
         if self._tokenizer.current_token == ".":
-            # breakpoint()
             class_name = function_name
-
             # method of object declared in class vars, push "this" onto stack
             if self._symbol_table.contains(class_name):
                 num_args += 1
@@ -446,7 +435,6 @@ class CompilationEngine:
         num_args += self.compile_expression_list()
         self.validate_and_advance(")")
 
-        # breakpoint()
         code = self._vm_writer.write_call(class_name, function_name, num_args)
         self._output_buffer.write(code)
 
@@ -464,7 +452,6 @@ class CompilationEngine:
     def compile_term(self):
 
         # term starting with "("
-        # breakpoint()
         if self._tokenizer.current_token == "(":
             self.validate_and_advance("(")
             self.compile_expression()
@@ -498,6 +485,11 @@ class CompilationEngine:
                 # add
                 # pop pointer 1 (to align THAT 0 with RAM address whose value is at THAT)
                 # push that 0 (push value onto stack)
+                code = self._vm_writer.write_push(kind, index)
+                code += self._vm_writer.write_arithmetic("+")
+                code += self._vm_writer.write_pop("pointer", 1)
+                code += self._vm_writer.write_push("that", 0)
+                self._output_buffer.write(code)
 
             # variable or constants
             else:
@@ -513,7 +505,7 @@ class CompilationEngine:
                     code = self._vm_writer.write_push("constant", int(name))
 
                 elif token_type == "string_constant":
-                    code = "NOT IMPLEMENTED\n"
+                    code = self._vm_writer.write_string(self._tokenizer.current_token)
 
                 elif name in ["true", "false", "null", "this"]:
                     code = self._vm_writer.write_term(name)
@@ -555,7 +547,8 @@ if __name__ == "__main__":
     # file_path = Path("../Seven/Main.jack")
     # file_path = Path("../Square/SquareGame.jack")
     # file_path = Path("../ConvertToBin/Main.jack")
-    file_path = Path("../Square/Square.jack")
+    # file_path = Path("../Square/Square.jack")
+    file_path = Path("../Average/Main.jack")
     jack_tokenizer = JackTokenizer(file_path)
     symbol_table = SymbolTable()
     vm_writer = VMWriter()

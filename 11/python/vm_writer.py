@@ -42,6 +42,16 @@ class VMWriter:
         # self._output_buffer.write(f"{self.UNARY_OPS[command]}\n")
         return f"{self.UNARY_OPS[command]}\n"
 
+    def write_string(self, string: str):
+        code = f"push constant {str(len(string))}\n"
+        code += "call String.new 1\n"
+
+        for char in string:
+            code += f"push constant {str(ord(char))}\n"
+            code += "call String.appendChar 2\n"
+
+        return code
+
     def write_label(self, label: str):
         # self._output_buffer.write(f"label {label}\n")
         return f"label {label}\n"
