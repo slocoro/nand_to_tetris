@@ -7,28 +7,81 @@
  * This library provides two services: direct access to the computer's main
  * memory (RAM), and allocation and recycling of memory blocks. The Hack RAM
  * consists of 32,768 words, each holding a 16-bit binary number.
- */ 
+ */
 class Memory {
+    static Array ram;
+    static Array heap;
+    static Array freeList;
+    static int listOverhead, next, size;
 
     /** Initializes the class. */
     function void init() {
+        let ram = 0;
+        let heap = 2048;  // base address of heap
+        let freeList = heap;  // put entire heap onto linked list as first available block
+        let next = 0;
+        let size = 1;
+        let listOverhead = 2;  // overhead to store next and length in linked list node
+        let heap[next] = 0;  // pointer to next block
+        let heap[size] = 14334;  // length, you start with the entire heap being the size of first segment in freeList
+
+        return;
     }
 
     /** Returns the RAM value at the given address. */
     function int peek(int address) {
+        return ram[address];
     }
 
     /** Sets the RAM value at the given address to the given value. */
     function void poke(int address, int value) {
+        let ram[address] = value;
+        return;
     }
 
     /** Finds an available RAM block of the given size and returns
      *  a reference to its base address. */
-    function int alloc(int size) {
+    function int alloc(int objectSize) {
+        // search the freelist for a segment that fits size + listOverhead
+        var Array block, newBlock;
+
+        let block = freeList;  // first block we check for free memory, if no memory has been allocated we're checking the entire heap (which is the first node in the freelist)
+
+        // iterate over nodes in linked list until we find a node with sufficiently large memory segment
+        while (block[size] < objectSize + listOverhead) {
+            let block = block[next];
+            if (block = 0) {
+                return -1;
+            }
+        }
+
+        // remove allocated memory from block
+        let block[size] = block[size] - (objectSize + listOverhead);
+
+        // let newBlock = block + block[size] + 2;
+        let newBlock = block + block[size] + 1;
+        let newBlock[next] = 0;
+        let newBlock[size] = objectSize;
+
+        return newBlock + 2; // return base of block's data part
+
+        // after alloc the free list still just has one node, the only difference is
+        // that the free memory segment is now shorter by (objectSize + listOverhead)
     }
 
     /** De-allocates the given object (cast as an array) by making
      *  it available for future allocations. */
+    // https://github.com/ptdriscoll/nand2tetris/blob/master/project12/Memory.jack
     function void deAlloc(Array o) {
-    }    
+
+        // append block to beginning of freelist?
+		let ram[o - 2] = freeList;
+		let freeList = o - 2;
+
+		// append block to end of freelist?
+		// let ram[freeList] = o - 2;
+		// let ram[o - 2] = 0;
+
+		return;
+    }
 }

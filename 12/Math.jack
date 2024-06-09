@@ -3,53 +3,134 @@
 // by Nisan and Schocken, MIT Press.
 // File name: projects/12/Math.jack
 
-/** A library of commonly used mathematical functions.
- *  All functions runs in O(n), where n is the number of bits used
- *  for representing a two's complement integer value (16 in the Hack computer). 
- *  Note: Jack compilers implement multiplication and division
- *  using calls to OS functions in this class.
+/**
+ * A basic math library.
  */
 class Math {
-    static int n;             // Number of bits used for representing a two's complement integer
-    static Array powersOfTwo; // Stores 2^0, 2^1, 2^2,..., 2^(n-1)
+    static int powersOfTwo;
+    static int n;
 
-    // Initializes the Math library.
+    /** Initializes the library. */
     function void init() {
+        let powersOfTwo = Array.new(16);
+        let powersOfTwo[0] = 1;
+        let powersOfTwo[1] = 2;
+        let powersOfTwo[2] = 4;
+        let powersOfTwo[3] = 8;
+        let powersOfTwo[4] = 16;
+        let powersOfTwo[5] = 32;
+        let powersOfTwo[6] = 64;
+        let powersOfTwo[7] = 128;
+        let powersOfTwo[8] = 256;
+        let powersOfTwo[9] = 512;
+        let powersOfTwo[10] = 1024;
+        let powersOfTwo[11] = 2048;
+        let powersOfTwo[12] = 4096;
+        let powersOfTwo[13] = 8192;
+        let powersOfTwo[14] = 16384;
+        let powersOfTwo[15] = 16384+16384;
+
+        let n = 16;
+        return;
     }
 
-    /** Returns the product of x and y. 
-     *  When a Jack compiler detects the multiplication operator '*'
-     *  in an expression, it handles it by invoking this method. 
-     *  Thus, in Jack, x * y and Math.multiply(x,y) return the same value.
-     */
-    function int multiply(int x, int y) {
+    function boolean bit(int x, int n) {
+        return ~((x & powersOfTwo[n]) = 0);
     }
 
-    /** Returns the integer part of x / y.
-     *  When a Jack compiler detects the division operator '/'
-     *  an an expression, it handles it by invoking this method.
-     *  Thus, x/y and Math.divide(x,y) return the same value.
-     */
-    function int divide(int x, int y) {
-    }
 
-    /** Returns the integer part of the square root of x.
-    */
-    function int sqrt(int x) {
-    }
-
-    /** Returns the greater value.
-    */
-    function int max(int a, int b) {
-    }
-
-    /** Returns the smaller value.
-    */
-    function int min(int a, int b) {
-    }
-
-    /** Returns the absolute value of x
-    */
+    /** Returns the absolute value of x. */
     function int abs(int x) {
+        if(x < 0) {
+            return -x;
+        }
+        return x;
+    }
+
+    /** Returns the product of x and y. */
+    function int multiply(int x, int y) {
+        var int sum, shiftedX;
+        var int j;
+
+        let sum = 0;
+        let shiftedX = x;
+        let j = 0;
+        while(j < n) {
+            if(Math.bit(y, j)) {
+                let sum = sum + shiftedX;
+            }
+            let shiftedX = shiftedX + shiftedX;
+            let j = j + 1;
+        }
+        return sum;
+    }
+
+    /** Returns the integer part of x/y. */
+    function int divide(int x, int y) {
+        var int negX, negY;
+        var int q;
+        var int result;
+
+        let negX = x < 0;
+        let negY = y < 0;
+        let x = Math.abs(x);
+        let y = Math.abs(y);
+
+        if( y > x ) {
+            return 0;
+        }
+        let q = Math.divide(x, y+y);
+        if(x-(2*q*y) < y) {
+            let result = q+q;
+        }
+        else {
+            let result = q+q+1;
+        }
+
+        if(negX = negY) {
+            return result;
+        }
+        else {
+            return -result;
+        }
+    }
+
+    /** Returns the integer part of the square root of x. */
+    function int sqrt(int x) {
+        var int j, y;
+        var int approx;
+        var int approx_squared;
+
+        let y = 0;
+        let j = 7;      // = #bits / 2 - 1
+        while( ~(j < 0) ) {
+            let approx = y + powersOfTwo[j];
+            let approx_squared = approx * approx;
+            if( ~(approx_squared > x) & (approx_squared > 0) ) {    // in case of overflow
+                let y = approx;
+            }
+            let j = j - 1;
+        }
+        return y;
+    }
+
+    /** Returns the greater number. */
+    function int max(int a, int b) {
+        if(a > b) {
+            return a;
+        }
+        else {
+            return b;
+        }
+    }
+
+    /** Returns the smaller number. */
+    function int min(int a, int b) {
+        if(a < b) {
+            return a;
+        }
+        else {
+            return b;
+        }
     }
 }
