@@ -239,6 +239,10 @@ class Output {
 
         // use ~mask to clear left or right of column (word), and mask to set character bits on the same side
         // (screen & ~mask) clears screen bits, (font & mask) sets font bits, the or operation sets result to word
+        // example:
+        // screen[32] = (screen[32] & ~mask) | (charMap[1] & mask)
+        //            = (0b00000000 & 0b00000000) | (0b01000010 & 0b11111111)
+        //            = 0b01000010
         while (idx < 11) {
             let screen[address] = (screen[address] & ~mask) | (charMap[idx] & mask);
             let address = address + 32;
