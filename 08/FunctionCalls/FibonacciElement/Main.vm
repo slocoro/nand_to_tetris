@@ -8,6 +8,9 @@
 // (part of the Sys.vm file), which sets argument[0] to an input
 // value and then calls Main.fibonacci.
 
+// This is the actual definition of the Fibonacci function
+// translated from high-level language to VM code
+
 function Main.fibonacci 0
 	push argument 0
 	push constant 2
