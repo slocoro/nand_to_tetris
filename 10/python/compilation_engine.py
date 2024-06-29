@@ -2,6 +2,9 @@ from io import StringIO
 from jack_tokenizer import JackTokenizer
 from pathlib import Path
 
+# this needs a lot of refactoring
+# just wanted to get it to work
+
 OP_LIST = [
     "+",
     "-",
