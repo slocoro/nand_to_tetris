@@ -5,3 +5,5 @@
 *.asm
 *.out
 09/**/*.vm
+*.zip
+*.txt
